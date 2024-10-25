@@ -41,6 +41,16 @@ title: 在windows上通过docker配置环境并利用vscode调试代码（手把
 docker run --privileged -d --name=miniobtest oceanbase/miniob
 ```
 
+注意：如果这里遇到网络问题（例如：timeout 相关提示），请尝试用其他镜像源拉取镜像。
+![docker pull timeout](images/docker_pull_timeout.png)
+```bash
+# 下面的命令三选一即可
+docker pull oceanbase/miniob         # pull from docker hub
+docker pull ghcr.io/oceanbase/miniob && docker tag ghcr.io/oceanbase/miniob oceanbase/miniob # pull from github
+docker pull quay.io/oceanbase/miniob && docker tag quay.io/oceanbase/miniob oceanbase/miniob # pull from github # pull from quay.io
+```
+
+
 其中 --name=miniobtest  这个“miniobtest”是自己容器的名字 可以自己改 
 这个代码大概理解成从远程oceanbase/miniob拉取适合miniob的配置好的环境
 
@@ -193,6 +203,16 @@ docker run -d --name fortest --privileged -v $PWD/miniob:/root/miniob oceanbase/
 
 ![start docker3](./images/dev_in_docker_container_by_vscode_on_windows_startDocker_in_vscode_3.png)
 
+> **没有看到 miniob 目录？**
+>
+> 请尝试以下方法：
+>
+> 在 Docker Desktop 中查看对应容器的 Log，如果提示 `REPO_ADDR` 未设置，请重新启动一个容器，并加上`-e REPO_ADDR=<your_repo_addr>` 参数，如`docker run -d --name fortest2 --privileged -v $PWD/miniob:/root/miniob -e REPO_ADDR=https://github.com/oceanbase/miniob.git oceanbase/miniob`。
+>
+> 容器启动后，在终端输入`ls`，会出现`source`目录，用`cd source`命令进入目录，再次输入`ls`即可发现`miniob`目录。
+>
+> 如果以上方法失效，请在 GitHub 创建一个 Issue，并附上容器的 Log。
+
 综合运用以下代码运行build.sh文件
 
 ~~~bash
@@ -249,4 +269,4 @@ cd build_debug
 这会连接到服务端的6789端口。
 
 
-编辑日期  2023-10-17      
+编辑日期  2024-09-10

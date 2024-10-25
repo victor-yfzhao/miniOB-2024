@@ -14,7 +14,7 @@ nav:
     - 运行: how_to_run.md
     - 开发环境:
       - dev-env/introduction.md
-      - dev-env/dev_by_gitpod.md
+      - dev-env/dev_by_online.md
       - dev-env/how-to-dev-using-docker.md
       - dev-env/how_to_dev_in_docker_container_by_vscode.md
       - dev-env/how_to_dev_in_docker_container_by_vscode_on_windows.md
@@ -45,9 +45,7 @@ nav:
     - game/miniob_topics.md
     - game/github-introduction.md
     - game/gitee-instructions.md
-    - game/miniob-test-comment-date.md
-    - game/miniob-date-implementation.md
-    - game/miniob-drop-table-implementation.md
+    - game/miniob-vectordb.md
   - 数据库实现简明教程:
     - lectures/copyright.md
     - lectures/lecture-1.md
@@ -122,3 +120,11 @@ extra:
 markdown_extensions:
   - toc:
       permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+      block_tag: 'pre'
+
+extra_javascript:
+    - ./assets/mathjax.js
+    - https://polyfill.io/v3/polyfill.min.js?features=es6
+    - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
