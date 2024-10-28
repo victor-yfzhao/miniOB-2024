@@ -125,7 +125,7 @@ public:
   MultiIndex() = default;
   MultiIndex(const IndexMeta &index_meta) 
   { 
-    FieldMeta *field_meta = nullptr;
+    FieldMeta *field_meta = new FieldMeta();
     init(index_meta, *field_meta); 
   }
 

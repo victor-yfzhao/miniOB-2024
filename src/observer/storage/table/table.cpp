@@ -474,8 +474,10 @@ RC Table::create_multi_index(Trx *trx, const vector<FieldMeta> &field_metas, con
     return rc;
   }
 
-  MultiIndex *multi_index = new MultiIndex(new_multi_index_meta);
+  // MultiIndex *multi_index = new MultiIndex(new_multi_index_meta);
   vector<Index *> child_indexes;
+
+  // IndexMeta multi_index_meta = multi_index->index_meta();
 
   // build each index in multi-index
   for (size_t i = 0; i < field_metas.size(); i++) {
@@ -507,6 +509,8 @@ RC Table::create_multi_index(Trx *trx, const vector<FieldMeta> &field_metas, con
 
     child_indexes.push_back(index);
   }
+
+  MultiIndex *multi_index = new MultiIndex(new_multi_index_meta);
 
   RecordFileScanner scanner;
   rc = get_record_scanner(scanner, trx, ReadWriteMode::READ_ONLY);
@@ -546,6 +550,14 @@ RC Table::create_multi_index(Trx *trx, const vector<FieldMeta> &field_metas, con
   if (rc != RC::SUCCESS) {
     LOG_ERROR("Failed to add index (%s) on table (%s). error=%d:%s", index_name, name(), rc, strrc(rc));
     return rc;
+  }
+
+  for (auto child_index_meta : new_multi_index_meta.children()) {
+    rc = new_table_meta.add_index(child_index_meta);
+    if (rc != RC::SUCCESS) {
+      LOG_ERROR("Failed to add child index (%s) on table (%s). error=%d:%s", child_index_meta.name(), name(), rc, strrc(rc));
+      return rc;
+    }
   }
 
   /// 内存中有一份元数据，磁盘文件也有一份元数据。修改磁盘文件时，先创建一个临时文件，写入完成后再rename为正式文件
@@ -617,26 +629,47 @@ RC Table::delete_record(const Record &record, Trx *trx)
 RC Table::update_record(const Record &record, Trx *trx)
 {
   RC rc = RC::SUCCESS;
-  // for (Index *index : indexes_) {
-  //   rc = index->delete_entry(record.data(), &record.rid());
-  //   if (rc != RC::SUCCESS) {
-  //     LOG_ERROR("Failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
-  //               name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
-  //     return rc;
-  //   }
-  // }
+
+  Record old_record;
+  rc = get_record(record.rid(), old_record);
+  if (rc != RC::SUCCESS) {
+    LOG_ERROR("Failed to get old record. table name=%s, rc=%s", name(), strrc(rc));
+    return rc;
+  }
+
+  for (Index *index : indexes_) {
+
+    if (index->index_meta().is_child()) continue; // 跳过多列索引的子索引
+
+    if (index->index_meta().children().size() > 0) {
+      rc = delete_from_multi_index(record.data(), record.rid(), (MultiIndex*)index, trx);
+    }
+    else {
+      rc = index->delete_entry(record.data(), &record.rid());
+    }
+    if (rc != RC::SUCCESS) {
+      LOG_ERROR("Failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
+                name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
+      return rc;
+    }
+  }
+
+  rc = insert_entry_of_indexes(record.data(), record.rid(), trx);
+  if (rc != RC::SUCCESS) {
+    LOG_ERROR("Failed to insert entry to index. table name=%s, rc=%s", name(), strrc(rc));
+    RC rc2 = insert_entry_of_indexes(old_record.data(), old_record.rid(), trx);
+    if (rc2 != RC::SUCCESS) {
+      LOG_ERROR("Failed to rollback index data when insert index entries failed. table name=%s, rc=%d:%s",
+                name(), rc2, strrc(rc2));
+    }
+    return rc;
+  }
 
   rc = record_handler_->update_record(record.rid(), record.data());
   if (rc != RC::SUCCESS) {
     LOG_ERROR("Failed to update record. table name=%s, rc=%s", name(), strrc(rc));
     return rc;
   }
-
-  // rc = insert_entry_of_indexes(record.data(), record.rid());
-  // if (rc != RC::SUCCESS) {
-  //   LOG_ERROR("Failed to insert entry to index. table name=%s, rc=%s", name(), strrc(rc));
-  //   return rc;
-  // }
 
   return rc;
 }
