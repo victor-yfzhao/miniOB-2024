@@ -23,7 +23,7 @@ const static Json::StaticString FIELD_NAME("name");
 const static Json::StaticString FIELD_FIELD_NAME("field_name");
 const static Json::StaticString UNIQUE("unique");
 
-RC IndexMeta::init(const char *name, const FieldMeta &field, bool unique)
+RC IndexMeta::init(const char *name, const FieldMeta &field, bool unique, bool is_child)
 {
   if (common::is_blank(name)) {
     LOG_ERROR("Failed to init index, name is empty.");
@@ -33,6 +33,25 @@ RC IndexMeta::init(const char *name, const FieldMeta &field, bool unique)
   name_  = name;
   field_ = field.name();
   unique_ = unique;
+  is_child_ = is_child;
+  return RC::SUCCESS;
+}
+
+RC IndexMeta::init_multi(const char *name, bool unique)
+{
+  if (common::is_blank(name)) {
+    LOG_ERROR("Failed to init index, name is empty.");
+    return RC::INVALID_ARGUMENT;
+  }
+
+  name_   = name;
+  unique_ = unique;
+  return RC::SUCCESS;
+}
+
+RC IndexMeta::push_child(const IndexMeta &child)
+{
+  children_.push_back(child);
   return RC::SUCCESS;
 }
 
@@ -79,5 +98,9 @@ const char *IndexMeta::name() const { return name_.c_str(); }
 const char *IndexMeta::field() const { return field_.c_str(); }
 
 bool IndexMeta::unique() const { return unique_; }
+
+const std::vector<IndexMeta> &IndexMeta::children() const { return children_; }
+
+bool IndexMeta::is_child() const { return is_child_; }
 
 void IndexMeta::desc(ostream &os) const { os << "index name=" << name_ << ", field=" << field_; }

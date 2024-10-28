@@ -35,12 +35,17 @@ class IndexMeta
 public:
   IndexMeta() = default;
 
-  RC init(const char *name, const FieldMeta &field, bool unique = false);
+  RC init(const char *name, const FieldMeta &field, bool unique = false, bool is_child = false);
+  RC init_multi(const char *name, bool unique = false);
+
+  RC push_child(const IndexMeta &child);
 
 public:
-  const char *name() const;
-  const char *field() const;
-  bool        unique() const;
+  const char                   *name() const;
+  const char                   *field() const;
+  bool                          unique() const;
+  const std::vector<IndexMeta> &children() const;
+  bool                          is_child() const;
 
   void desc(ostream &os) const;
 
@@ -49,7 +54,9 @@ public:
   static RC from_json(const TableMeta &table, const Json::Value &json_value, IndexMeta &index);
 
 protected:
-  string name_;   // index's name
-  string field_;  // field's name
-  bool   unique_ = false; // 是否唯一
+  string                 name_;   // index's name
+  string                 field_;  // field's name
+  std::vector<IndexMeta> children_;
+  bool                   unique_ = false; // 是否唯一
+  bool                   is_child_ = false; // 是否是子索引
 };

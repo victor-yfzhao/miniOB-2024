@@ -134,7 +134,7 @@ RC MvccTrx::insert_record(Table *table, Record &record)
   begin_field.set_int(record, -trx_id_);
   end_field.set_int(record, trx_kit_.max_trx_id());
 
-  RC rc = table->insert_record(record);
+  RC rc = table->insert_record(record, this);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to insert record into table. rc=%s", strrc(rc));
     return rc;
