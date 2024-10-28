@@ -69,6 +69,11 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         CREATE
         DROP
         GROUP
+        COUNT // ADD COUNT
+        SUM //ADD SUM
+        MAX //ADD MAX
+        MIN //ADD MIN
+        AVG //ADD AVG
         TABLE
         TABLES
         INDEX
@@ -555,6 +560,21 @@ expression:
       $$ = new StarExpr();
     }
     // your code here
+    | COUNT LBRACE expression RBRACE{
+      $$ = create_aggregate_expression("count", $3, sql_string, &@$);
+    }
+    | SUM LBRACE expression RBRACE{ 
+      $$ = create_aggregate_expression("sum",   $3, sql_string, &@$);
+    }
+    | AVG LBRACE expression RBRACE{
+      $$ = create_aggregate_expression("avg",   $3, sql_string, &@$);
+    }
+    | MAX LBRACE expression RBRACE{
+      $$ = create_aggregate_expression("max",   $3, sql_string, &@$);
+    }
+    | MIN LBRACE expression RBRACE{
+      $$ = create_aggregate_expression("min",   $3, sql_string, &@$);
+    }
     ;
 
 rel_attr:
