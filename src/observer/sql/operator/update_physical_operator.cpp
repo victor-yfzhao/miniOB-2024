@@ -37,11 +37,15 @@ RC UpdatePhysicalOperator::open(Trx *trx)
 
   child->close();
 
-  for (Record &record : records_) {
+  for (const Record &record : records_) {
 
     //AttrType attr_type = field_.attr_type();
     const FieldMeta *field = table_->table_meta().field(field_name_.c_str());
     AttrType attr_type = field->type();
+
+    Record new_record = Record();
+    new_record.copy_data(record.data(), record.len());
+    new_record.set_rid(record.rid().page_num, record.rid().slot_num);
 
     if (attr_type != values_->attr_type()) {
       Value real_value;
@@ -50,10 +54,10 @@ RC UpdatePhysicalOperator::open(Trx *trx)
         LOG_WARN("failed to cast value: %s", strrc(rc));
         return rc;
       }
-      rc = set_value_to_record(record.data(), real_value, field);
+      rc = set_value_to_record(new_record.data(), real_value, field);
     } else {
       Value value = *values_;
-      rc = set_value_to_record(record.data(), value, field);
+      rc = set_value_to_record(new_record.data(), value, field);
     }
 
     if (rc != RC::SUCCESS) {
@@ -61,7 +65,7 @@ RC UpdatePhysicalOperator::open(Trx *trx)
       return rc;
     }
 
-    rc = trx_->update_record(table_, record);
+    rc = trx_->update_record(table_, new_record);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to update record: %s", strrc(rc));
       return rc;
