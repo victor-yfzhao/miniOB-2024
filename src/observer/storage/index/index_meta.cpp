@@ -61,6 +61,15 @@ void IndexMeta::to_json(Json::Value &json_value) const
   json_value[FIELD_FIELD_NAME] = field_;
   json_value[UNIQUE]         = unique_;
   json_value["is_multi_index"] = children_.size() > 0;
+  json_value["is_child"] = is_child_;
+  
+  Json::Value children_value;
+  for (const IndexMeta &child : children_) {
+    Json::Value child_value;
+    child.to_json(child_value);
+    children_value.append(child_value);
+  }
+  json_value["children"] = std::move(children_value);
 }
 
 RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, IndexMeta &index)
@@ -68,7 +77,7 @@ RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, I
   const Json::Value &name_value  = json_value[FIELD_NAME];
   const Json::Value &field_value = json_value[FIELD_FIELD_NAME];
   const Json::Value &unique_value = json_value[UNIQUE];
-  const Json::Value &is_multi_index = json_value["is_multi_index"];
+
   if (!name_value.isString()) {
     LOG_ERROR("Index name is not a string. json value=%s", name_value.toStyledString().c_str());
     return RC::INTERNAL;
@@ -86,6 +95,40 @@ RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, I
     return RC::INTERNAL;
   }
 
+  const Json::Value &is_multi_index = json_value["is_multi_index"];
+  if (!is_multi_index.isBool()) {
+    LOG_ERROR("Deserialize index [%s]: is_multi_index is not a bool", name_value.asCString());
+    return RC::INTERNAL;
+  }
+
+  const Json::Value &is_child = json_value["is_child"];
+  if (!is_child.isBool()) {
+    LOG_ERROR("Deserialize index [%s]: is_child is not a bool", name_value.asCString());
+    return RC::INTERNAL;
+  }
+
+  const Json::Value &children_value = json_value["children"];
+  if (!children_value.isArray()) {
+    LOG_ERROR("Deserialize index [%s]: children is not an array", name_value.asCString());
+    return RC::INTERNAL;
+  }
+  if(is_multi_index.asBool() && children_value.size() == 0) {
+    LOG_ERROR("Deserialize index [%s]: multi-index should have children", name_value.asCString());
+    return RC::INTERNAL;
+  }
+  if(is_multi_index.asBool()) {
+    for (const Json::Value &child_value : children_value) {
+      IndexMeta child;
+      RC rc = from_json(table, child_value, child);
+      if (rc != RC::SUCCESS) {
+        LOG_ERROR("Deserialize index [%s]: failed to deserialize child index", name_value.asCString());
+        return rc;
+      }
+      index.push_child(child);
+    }
+    return index.init_multi(name_value.asCString(), unique_value.asBool());
+  }
+
   const FieldMeta *_field = table.field(field_value.asCString());
   if (!is_multi_index.isBool()) {
     if (nullptr == _field) {
@@ -96,7 +139,7 @@ RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, I
 
   const FieldMeta *field = (is_multi_index.asBool()) ? new FieldMeta() : _field;
 
-  return index.init(name_value.asCString(), *field, unique_value.asBool());
+  return index.init(name_value.asCString(), *field, unique_value.asBool(), is_child.asBool());
 }
 
 const char *IndexMeta::name() const { return name_.c_str(); }

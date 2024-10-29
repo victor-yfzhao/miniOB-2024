@@ -471,16 +471,16 @@ RC Table::create_multi_index(Trx *trx, const vector<FieldMeta> &field_metas, con
       return RC::SCHEMA_INDEX_NAME_REPEAT;
     }
 
-    if (index->index_meta().children().size() > 0) continue;
+    // if (index->index_meta().children().size() > 0) continue;
 
-    const char *_field = index->index_meta().field();
+    // const char *_field = index->index_meta().field();
 
-    for (FieldMeta field_meta : field_metas) {
-      if (strcmp(_field, field_meta.name()) == 0) {
-        LOG_ERROR("Field %s has been indexed, cannot create multi-index on it", _field);
-        return RC::SCHEMA_INDEX_NAME_REPEAT;
-      }
-    }
+    // for (FieldMeta field_meta : field_metas) {
+    //   if (strcmp(_field, field_meta.name()) == 0) {
+    //     LOG_ERROR("Field %s has been indexed, cannot create multi-index on it", _field);
+    //     return RC::SCHEMA_INDEX_NAME_REPEAT;
+    //   }
+    // }
   }
 
   // build parent index meta to describe the whole multi-index
@@ -539,7 +539,14 @@ RC Table::create_multi_index(Trx *trx, const vector<FieldMeta> &field_metas, con
 
   Record record;
   while (OB_SUCC(rc = scanner.next(record))) {
-    rc = insert_into_multi_index(record.data(), record.rid(), multi_index, trx);
+    for (Index *index : child_indexes) {
+      rc = index->insert_entry(record.data(), &record.rid());
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to insert record into index while creating index. table=%s, index=%s, rc=%s",
+                 name(), index->index_meta().name(), strrc(rc));
+        return rc;
+      }
+    }
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to insert record into index while creating index. table=%s, index=%s, rc=%s",
                name(), index_name, strrc(rc));
@@ -648,40 +655,40 @@ RC Table::update_record(const Record &record, Trx *trx)
 {
   RC rc = RC::SUCCESS;
 
-  Record old_record;
-  rc = get_record(record.rid(), old_record);
-  if (rc != RC::SUCCESS) {
-    LOG_ERROR("Failed to get old record. table name=%s, rc=%s", name(), strrc(rc));
-    return rc;
-  }
+  // Record old_record;
+  // rc = get_record(record.rid(), old_record);
+  // if (rc != RC::SUCCESS) {
+  //   LOG_ERROR("Failed to get old record. table name=%s, rc=%s", name(), strrc(rc));
+  //   return rc;
+  // }
 
-  for (Index *index : indexes_) {
+  // for (Index *index : indexes_) {
 
-    if (index->index_meta().is_child()) continue; // 跳过多列索引的子索引
+  //   if (index->index_meta().is_child()) continue; // 跳过多列索引的子索引
 
-    if (index->index_meta().children().size() > 0) {
-      rc = delete_from_multi_index(record.data(), record.rid(), (MultiIndex*)index, trx);
-    }
-    else {
-      rc = index->delete_entry(record.data(), &record.rid());
-    }
-    if (rc != RC::SUCCESS) {
-      LOG_ERROR("Failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
-                name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
-      return rc;
-    }
-  }
+  //   if (index->index_meta().children().size() > 0) {
+  //     rc = delete_from_multi_index(old_record.data(), old_record.rid(), (MultiIndex*)index, trx);
+  //   }
+  //   else {
+  //     rc = index->delete_entry(old_record.data(), &old_record.rid());
+  //   }
+  //   if (rc != RC::SUCCESS) {
+  //     LOG_ERROR("Failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
+  //               name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
+  //     return rc;
+  //   }
+  // }
 
-  rc = insert_entry_of_indexes(record.data(), record.rid(), trx);
-  if (rc != RC::SUCCESS) {
-    LOG_ERROR("Failed to insert entry to index. table name=%s, rc=%s", name(), strrc(rc));
-    RC rc2 = insert_entry_of_indexes(old_record.data(), old_record.rid(), trx);
-    if (rc2 != RC::SUCCESS) {
-      LOG_ERROR("Failed to rollback index data when insert index entries failed. table name=%s, rc=%d:%s",
-                name(), rc2, strrc(rc2));
-    }
-    return rc;
-  }
+  // rc = insert_entry_of_indexes(record.data(), record.rid(), trx);
+  // if (rc != RC::SUCCESS) {
+  //   LOG_ERROR("Failed to insert entry to index. table name=%s, rc=%s", name(), strrc(rc));
+  //   RC rc2 = insert_entry_of_indexes(old_record.data(), old_record.rid(), trx);
+  //   if (rc2 != RC::SUCCESS) {
+  //     LOG_ERROR("Failed to rollback index data when insert index entries failed. table name=%s, rc=%d:%s",
+  //               name(), rc2, strrc(rc2));
+  //   }
+  //   return rc;
+  // }
 
   rc = record_handler_->update_record(record.rid(), record.data());
   if (rc != RC::SUCCESS) {
@@ -777,7 +784,11 @@ RC Table::insert_into_multi_index(const char *record, const RID &rid, const Mult
   }
   
   for (const IndexMeta &child_index : multi_index->index_meta().children()) {
-    Index *index = find_index(child_index.name());
+    Index *index = find_index(child_index.field());
+    if (index == nullptr) {
+      LOG_ERROR("Failed to find index. table name=%s, index name=%s", name(), child_index.name());
+      return RC::INTERNAL;
+    }
 
     rc = index->insert_entry(record, &rid);
     if (rc != RC::SUCCESS) {
