@@ -761,7 +761,12 @@ RC Table::insert_into_multi_index(const char *record, const RID &rid, const Mult
 
     Record _record;
     bool   able_to_insert = true;
-    while (OB_SUCC(rc = scanner.next(_record)) && _record.rid() != rid) {
+    while (OB_SUCC(rc = scanner.next(_record))) {
+
+      if (_record.rid() == rid) {
+        continue;
+      }
+
       rc = compare_record_multi_index(record, _record.data(), multi_index, able_to_insert);
       if (rc != RC::SUCCESS) {
         LOG_ERROR("failed to compare record while inserting multi-index. table=%s, index=%s, rc=%s", name(), multi_index->index_meta().name(), strrc(rc));
