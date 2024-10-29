@@ -60,6 +60,7 @@ void IndexMeta::to_json(Json::Value &json_value) const
   json_value[FIELD_NAME]       = name_;
   json_value[FIELD_FIELD_NAME] = field_;
   json_value[UNIQUE]         = unique_;
+  json_value["is_multi_index"] = children_.size() > 0;
 }
 
 RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, IndexMeta &index)
@@ -67,6 +68,7 @@ RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, I
   const Json::Value &name_value  = json_value[FIELD_NAME];
   const Json::Value &field_value = json_value[FIELD_FIELD_NAME];
   const Json::Value &unique_value = json_value[UNIQUE];
+  const Json::Value &is_multi_index = json_value["is_multi_index"];
   if (!name_value.isString()) {
     LOG_ERROR("Index name is not a string. json value=%s", name_value.toStyledString().c_str());
     return RC::INTERNAL;
@@ -84,11 +86,15 @@ RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, I
     return RC::INTERNAL;
   }
 
-  const FieldMeta *field = table.field(field_value.asCString());
-  if (nullptr == field) {
-    LOG_ERROR("Deserialize index [%s]: no such field: %s", name_value.asCString(), field_value.asCString());
-    return RC::SCHEMA_FIELD_MISSING;
+  const FieldMeta *_field = table.field(field_value.asCString());
+  if (!is_multi_index.isBool()) {
+    if (nullptr == _field) {
+      LOG_ERROR("Deserialize index [%s]: no such field: %s", name_value.asCString(), field_value.asCString());
+      return RC::SCHEMA_FIELD_MISSING;
+    }
   }
+
+  const FieldMeta *field = (is_multi_index.asBool()) ? new FieldMeta() : _field;
 
   return index.init(name_value.asCString(), *field, unique_value.asBool());
 }

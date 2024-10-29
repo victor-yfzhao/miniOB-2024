@@ -465,6 +465,24 @@ RC Table::create_multi_index(Trx *trx, const vector<FieldMeta> &field_metas, con
     return RC::INVALID_ARGUMENT;
   }
 
+  for(Index *index : indexes_) {
+    if (strcmp(index->index_meta().name(), index_name) == 0) {
+      LOG_ERROR("Index %s has been created, cannot create multi-index on it", index_name);
+      return RC::SCHEMA_INDEX_NAME_REPEAT;
+    }
+
+    if (index->index_meta().children().size() > 0) continue;
+
+    const char *_field = index->index_meta().field();
+
+    for (FieldMeta field_meta : field_metas) {
+      if (strcmp(_field, field_meta.name()) == 0) {
+        LOG_ERROR("Field %s has been indexed, cannot create multi-index on it", _field);
+        return RC::SCHEMA_INDEX_NAME_REPEAT;
+      }
+    }
+  }
+
   // build parent index meta to describe the whole multi-index
   IndexMeta new_multi_index_meta;
 
