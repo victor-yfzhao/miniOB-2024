@@ -33,18 +33,38 @@ RC CreateIndexExecutor::execute(SQLStageEvent *sql_event)
   Trx   *trx   = session->current_trx();
   Table *table = create_index_stmt->table();
   RC     rc    = RC::SUCCESS;
-  for(size_t i = 0; i < create_index_stmt->field_metas().size(); i++) {
-    const FieldMeta *field_meta = &create_index_stmt->field_metas()[i];
 
-    string index_name = create_index_stmt->index_name() + "_" + std::to_string(i);
-    
-    rc = table->create_index(trx, field_meta, index_name.c_str(), create_index_stmt->unique());
+  if (create_index_stmt->field_metas().size() == 1){
+    const FieldMeta *field_meta = &create_index_stmt->field_metas()[0];
+    rc = table->create_index(trx, field_meta, create_index_stmt->index_name().c_str(), create_index_stmt->unique());
     if (rc != RC::SUCCESS) {
       LOG_ERROR("Failed to create index. table=%s, index=%s, field=%s, rc=%s",
                 table->name(), create_index_stmt->index_name().c_str(), field_meta->name(), strrc(rc));
       return rc;
     }
+  } 
+  
+  else {
+    rc = table->create_multi_index(trx, create_index_stmt->field_metas(), create_index_stmt->index_name().c_str(), create_index_stmt->unique());
+    if (rc != RC::SUCCESS) {
+      LOG_ERROR("Failed to create index. table=%s, index=%s, rc=%s",
+                table->name(), create_index_stmt->index_name().c_str(), strrc(rc));
+      return rc;
+    }
   }
+
+  // for(size_t i = 0; i < create_index_stmt->field_metas().size(); i++) {
+  //   const FieldMeta *field_meta = &create_index_stmt->field_metas()[i];
+
+  //   string index_name = create_index_stmt->index_name() + "_" + std::to_string(i);
+    
+  //   rc = table->create_index(trx, field_meta, index_name.c_str(), create_index_stmt->unique());
+  //   if (rc != RC::SUCCESS) {
+  //     LOG_ERROR("Failed to create index. table=%s, index=%s, field=%s, rc=%s",
+  //               table->name(), create_index_stmt->index_name().c_str(), field_meta->name(), strrc(rc));
+  //     return rc;
+  //   }
+  // }
 
   // rc = table->create_index(trx, create_index_stmt->field_metas(), create_index_stmt->index_name().c_str(), create_index_stmt->unique());
 

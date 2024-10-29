@@ -94,6 +94,7 @@ protected:
 protected:
   IndexMeta index_meta_;  ///< 索引的元数据
   FieldMeta field_meta_;  ///< 当前实现仅考虑一个字段的索引
+  // vector<Index> children_;
 };
 
 /**
@@ -112,4 +113,56 @@ public:
    */
   virtual RC next_entry(RID *rid) = 0;
   virtual RC destroy()            = 0;
+};
+
+/**
+ * @brief multi-index
+ * @ingroup Index
+ */
+class MultiIndex : public Index
+{
+public:
+  MultiIndex() = default;
+  MultiIndex(const IndexMeta &index_meta) 
+  { 
+    FieldMeta *field_meta = new FieldMeta();
+    init(index_meta, *field_meta); 
+  }
+
+  ~MultiIndex() override = default;
+
+  const IndexMeta &index_meta() const { return index_meta_; }
+
+  bool is_vector_index() override { return false; }
+
+  RC create(Table *table, const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta) override
+  {
+    return RC::UNSUPPORTED;
+  }
+  
+  RC open(Table *table, const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta) override
+  {
+    return RC::UNSUPPORTED;
+  }
+
+  RC insert_entry(const char *record, const RID *rid) override
+  {
+    return RC::UNSUPPORTED;
+  }
+
+  RC delete_entry(const char *record, const RID *rid) override
+  {
+    return RC::UNSUPPORTED;
+  }
+
+  IndexScanner *create_scanner(const char *left_key, int left_len, bool left_inclusive, const char *right_key,
+      int right_len, bool right_inclusive) override
+  {
+    return nullptr;
+  }
+
+  RC sync() override
+  {
+    return RC::UNSUPPORTED;
+  }
 };
