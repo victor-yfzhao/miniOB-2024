@@ -784,7 +784,7 @@ RC Table::insert_into_multi_index(const char *record, const RID &rid, const Mult
   }
   
   for (const IndexMeta &child_index : multi_index->index_meta().children()) {
-    Index *index = find_index(child_index.field());
+    Index *index = find_index(child_index.name());
     if (index == nullptr) {
       LOG_ERROR("Failed to find index. table name=%s, index name=%s", name(), child_index.name());
       return RC::INTERNAL;
