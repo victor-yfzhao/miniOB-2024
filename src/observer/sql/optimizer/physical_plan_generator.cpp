@@ -300,7 +300,7 @@ RC PhysicalPlanGenerator::create_plan(UpdateLogicalOperator &update_oper, unique
     }
   }
 
-  oper = unique_ptr<PhysicalOperator>(new UpdatePhysicalOperator(update_oper.table(), update_oper.values(), update_oper.value_amount(), update_oper.field(), update_oper.field_name()));
+  oper = unique_ptr<PhysicalOperator>(new UpdatePhysicalOperator(update_oper.table(), update_oper.kv_pairs()));
 
   if (child_physical_oper) {
     oper->add_child(std::move(child_physical_oper));

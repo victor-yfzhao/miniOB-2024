@@ -12,8 +12,8 @@ class UpdateStmt;
 class UpdatePhysicalOperator : public PhysicalOperator
 {
 public:
-  UpdatePhysicalOperator(Table *table, const Value *values, int value_amount, Field field, std::string field_name) : 
-  table_(table), values_(values), value_amount_(value_amount), field_(field), field_name_(field_name) {}
+  UpdatePhysicalOperator(Table *table, const std::unordered_map<std::string, const Value *> &kv_pairs)
+    : table_(table), kv_pairs_(kv_pairs) {}
 
   virtual ~UpdatePhysicalOperator() = default;
 
@@ -29,11 +29,8 @@ private:
   RC set_value_to_record(char *record_data, const Value &value, const FieldMeta *field);
 
 private:
-  Table              *table_ = nullptr;
-  const Value        *values_ = nullptr;
-  int                 value_amount_ = 0;
-  Trx                *trx_ = nullptr;
-  Field               field_ = Field();
-  std::string         field_name_;
-  std::vector<Record> records_;
+  Table                                          *table_ = nullptr;
+  std::unordered_map<std::string, const Value *>  kv_pairs_;
+  Trx                                            *trx_ = nullptr;
+  std::vector<Record>                             records_;
 };

@@ -38,38 +38,44 @@ RC UpdatePhysicalOperator::open(Trx *trx)
   child->close();
 
   for (const Record &record : records_) {
-
-    //AttrType attr_type = field_.attr_type();
-    const FieldMeta *field = table_->table_meta().field(field_name_.c_str());
-    AttrType attr_type = field->type();
-
     Record new_record = Record();
     new_record.copy_data(record.data(), record.len());
     new_record.set_rid(record.rid().page_num, record.rid().slot_num);
 
-    if (attr_type != values_->attr_type()) {
-      Value real_value;
-      rc = Value::cast_to(*values_, attr_type, real_value);
+    for (const auto &kv_pair : kv_pairs_) {
+      const Value     *value = kv_pair.second;
+
+      const FieldMeta *field = table_->table_meta().field(kv_pair.first.c_str());
+      if (nullptr == field) {
+        LOG_WARN("no such field in table: %s", kv_pair.first.c_str());
+        return RC::SCHEMA_FIELD_NOT_EXIST;
+      }
+
+      AttrType attr_type = field->type();
+
+      if (attr_type != value->attr_type()) {
+        Value real_value;
+        rc = Value::cast_to(*value, attr_type, real_value);
+        if (rc != RC::SUCCESS) {
+          LOG_WARN("failed to cast value: %s", strrc(rc));
+          return rc;
+        }
+        rc = set_value_to_record(new_record.data(), real_value, field);
+      } else {
+        Value _value = *value;
+        rc = set_value_to_record(new_record.data(), _value, field);
+      }
+
       if (rc != RC::SUCCESS) {
-        LOG_WARN("failed to cast value: %s", strrc(rc));
+        LOG_WARN("failed to set value to record: %s", strrc(rc));
         return rc;
       }
-      rc = set_value_to_record(new_record.data(), real_value, field);
-    } else {
-      Value value = *values_;
-      rc = set_value_to_record(new_record.data(), value, field);
     }
-
-    if (rc != RC::SUCCESS) {
-      LOG_WARN("failed to set value to record: %s", strrc(rc));
-      return rc;
-    }
-
     rc = trx_->update_record(table_, new_record);
-    if (rc != RC::SUCCESS) {
-      LOG_WARN("failed to update record: %s", strrc(rc));
-      return rc;
-    }
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to update record: %s", strrc(rc));
+        return rc;
+      }
   }
 
   return RC::SUCCESS;

@@ -283,7 +283,7 @@ RC LogicalPlanGenerator::create_plan(UpdateStmt *update_stmt, unique_ptr<Logical
       return rc;
     }
 
-    unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table, update_stmt->values(), update_stmt->value_amount(), update_stmt->field(), update_stmt->field_name()));
+    unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table, update_stmt->kv_pairs()));
 
     if (predicate_oper) {
       predicate_oper->add_child(std::move(table_get_oper));
