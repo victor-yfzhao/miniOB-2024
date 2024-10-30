@@ -675,11 +675,9 @@ RC Table::update_record(const Record &record, Trx *trx)
     if (rc != RC::SUCCESS) {
       LOG_ERROR("Failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
                 name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
-      return rc;
+      //return rc;
     }
   }
-
-  LOG_ERROR("Passed delete entry from index. table name=%s, rid=%s", name(), record.rid().to_string().c_str());
 
   rc = insert_entry_of_indexes(record.data(), record.rid(), trx);
   if (rc != RC::SUCCESS) {
@@ -691,8 +689,6 @@ RC Table::update_record(const Record &record, Trx *trx)
     }
     return rc;
   }
-
-  LOG_ERROR("Passed insert entry to index. table name=%s, rid=%s", name(), record.rid().to_string().c_str());
 
   rc = record_handler_->update_record(record.rid(), record.data());
   if (rc != RC::SUCCESS) {
