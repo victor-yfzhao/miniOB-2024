@@ -662,33 +662,37 @@ RC Table::update_record(const Record &record, Trx *trx)
     return rc;
   }
 
-  // for (Index *index : indexes_) {
+  for (Index *index : indexes_) {
 
-  //   if (index->index_meta().is_child()) continue; // 跳过多列索引的子索引
+    if (index->index_meta().is_child()) continue; // 跳过多列索引的子索引
 
-  //   if (index->index_meta().children().size() > 0) {
-  //     rc = delete_from_multi_index(old_record.data(), old_record.rid(), (MultiIndex*)index, trx);
-  //   }
-  //   else {
-  //     rc = index->delete_entry(old_record.data(), &old_record.rid());
-  //   }
-  //   if (rc != RC::SUCCESS) {
-  //     LOG_ERROR("Failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
-  //               name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
-  //     return rc;
-  //   }
-  // }
+    if (index->index_meta().children().size() > 0) {
+      rc = delete_from_multi_index(old_record.data(), old_record.rid(), (MultiIndex*)index, trx);
+    }
+    else {
+      rc = index->delete_entry(old_record.data(), &old_record.rid());
+    }
+    if (rc != RC::SUCCESS) {
+      LOG_ERROR("Failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
+                name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
+      return rc;
+    }
+  }
 
-  // rc = insert_entry_of_indexes(record.data(), record.rid(), trx);
-  // if (rc != RC::SUCCESS) {
-  //   LOG_ERROR("Failed to insert entry to index. table name=%s, rc=%s", name(), strrc(rc));
-  //   RC rc2 = insert_entry_of_indexes(old_record.data(), old_record.rid(), trx);
-  //   if (rc2 != RC::SUCCESS) {
-  //     LOG_ERROR("Failed to rollback index data when insert index entries failed. table name=%s, rc=%d:%s",
-  //               name(), rc2, strrc(rc2));
-  //   }
-  //   return rc;
-  // }
+  LOG_ERROR("Passed delete entry from index. table name=%s, rid=%s", name(), record.rid().to_string().c_str());
+
+  rc = insert_entry_of_indexes(record.data(), record.rid(), trx);
+  if (rc != RC::SUCCESS) {
+    LOG_ERROR("Failed to insert entry to index. table name=%s, rc=%s", name(), strrc(rc));
+    RC rc2 = insert_entry_of_indexes(old_record.data(), old_record.rid(), trx);
+    if (rc2 != RC::SUCCESS) {
+      LOG_ERROR("Failed to rollback index data when insert index entries failed. table name=%s, rc=%d:%s",
+                name(), rc2, strrc(rc2));
+    }
+    return rc;
+  }
+
+  LOG_ERROR("Passed insert entry to index. table name=%s, rid=%s", name(), record.rid().to_string().c_str());
 
   rc = record_handler_->update_record(record.rid(), record.data());
   if (rc != RC::SUCCESS) {
