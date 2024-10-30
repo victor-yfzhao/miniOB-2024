@@ -749,13 +749,14 @@ RC Table::insert_into_multi_index(const char *record, const RID &rid, const Mult
 {
   RC rc = RC::SUCCESS;
 
-  if (multi_index->index_meta().unique())
+  //if (multi_index->index_meta().unique())
+  if (false)
   {
     RecordFileScanner scanner;
 
     rc = get_record_scanner(scanner, trx, ReadWriteMode::READ_ONLY);
     if (rc != RC::SUCCESS) {
-      LOG_ERROR("failed to create scanner while inserting multi-index. table=%s, index=%s, rc=%s", name(), multi_index->index_meta().name(), strrc(rc));
+      LOG_WARN("failed to create scanner while inserting multi-index. table=%s, index=%s, rc=%s", name(), multi_index->index_meta().name(), strrc(rc));
       return rc;
     }
 
@@ -769,7 +770,7 @@ RC Table::insert_into_multi_index(const char *record, const RID &rid, const Mult
 
       rc = compare_record_multi_index(record, _record.data(), multi_index, able_to_insert);
       if (rc != RC::SUCCESS) {
-        LOG_ERROR("failed to compare record while inserting multi-index. table=%s, index=%s, rc=%s", name(), multi_index->index_meta().name(), strrc(rc));
+        LOG_WARN("failed to compare record while inserting multi-index. table=%s, index=%s, rc=%s", name(), multi_index->index_meta().name(), strrc(rc));
         return rc;
       }
 
@@ -781,7 +782,7 @@ RC Table::insert_into_multi_index(const char *record, const RID &rid, const Mult
     if (RC::RECORD_EOF == rc) {
       rc = RC::SUCCESS;
     } else {
-      LOG_ERROR("failed to insert record into index. table=%s, index=%s, rc=%s", name(), multi_index->index_meta().name(), strrc(rc));
+      LOG_WARN("failed to insert record into index. table=%s, index=%s, rc=%s", name(), multi_index->index_meta().name(), strrc(rc));
       return rc;
     }
 
