@@ -84,6 +84,12 @@ public:
    */
   virtual RC to_string(const Value &val, string &result) const { return RC::UNSUPPORTED; }
 
+
+  virtual RC L2_DISTANCE(const Value &left, const Value &right, Value &result) const { return RC::UNSUPPORTED; } 
+
+  virtual RC COSINE_DISTANCE(const Value &left, const Value &right, Value &result) const { return RC::UNSUPPORTED; }
+
+  virtual RC INNER_PRODUCT(const Value &left, const Value &right, Value &result) const { return RC::UNSUPPORTED; }
   /**
    * @brief 计算从 type 到 attr_type 的隐式转换的 cost，如果无法转换，返回 INT32_MAX
    */
@@ -94,6 +100,7 @@ public:
     }
     return INT32_MAX;
   }
+  virtual RC prepare_vectors(const Value &left, const Value &right, std::vector<double> &left_vector, std::vector<double> &right_vector) const { return RC::UNSUPPORTED; }
 
   virtual RC set_value_from_str(Value &val, const string &data) const { return RC::UNSUPPORTED; }
 

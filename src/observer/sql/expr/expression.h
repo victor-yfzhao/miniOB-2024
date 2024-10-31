@@ -47,6 +47,7 @@ enum class ExprType
   CONJUNCTION,  ///< 多个表达式使用同一种关系(AND或OR)来联结
   ARITHMETIC,   ///< 算术运算
   AGGREGATION,  ///< 聚合运算
+  VECTOR_EXPR   ///< 向量表达式
 };
 
 /**
@@ -467,4 +468,49 @@ public:
 private:
   Type                        aggregate_type_;
   std::unique_ptr<Expression> child_;
+};
+
+class VectorExpr : public Expression
+{
+  public:
+    enum class Type
+    {
+      L2_DISTANCE,
+      COSINE_DISTANCE,
+      INNER_PRODUCT,
+    };
+
+  public:
+    VectorExpr(Type type, Expression *left, Expression *right);
+    VectorExpr(Type type, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right);
+    virtual ~VectorExpr() = default;
+
+    bool equal(const Expression &other) const override;
+    ExprType type() const override { return ExprType::VECTOR_EXPR; }
+
+    AttrType value_type() const override;
+    int      value_length() const override { return 4; }
+
+    RC get_value(const Tuple &tuple, Value &value) const override;
+
+    // RC get_column(Chunk &chunk, Column &column) override;
+
+    RC try_get_value(Value &value) const override;
+
+    Type vector_type() const { return vector_type_; }
+
+    std::unique_ptr<Expression> &left() { return left_; }
+    std::unique_ptr<Expression> &right() { return right_; }
+  private:
+    RC calc_value(const Value &left_value, const Value &right_value, Value &value) const;
+
+    // RC calc_column(const Column &left_column, const Column &right_column, Column &column) const;
+
+    // template <bool LEFT_CONSTANT, bool RIGHT_CONSTANT>
+    // RC execute_calc(const Column &left, const Column &right, Column &result, Type type, AttrType attr_type) const;
+
+  private:
+    Type                        vector_type_;
+    std::unique_ptr<Expression> left_;
+    std::unique_ptr<Expression> right_;
 };

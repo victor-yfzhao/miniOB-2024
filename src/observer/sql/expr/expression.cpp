@@ -313,6 +313,7 @@ bool ArithmeticExpr::equal(const Expression &other) const
   return arithmetic_type_ == other_arith_expr.arithmetic_type() && left_->equal(*other_arith_expr.left_) &&
          right_->equal(*other_arith_expr.right_);
 }
+
 AttrType ArithmeticExpr::value_type() const
 {
   if (!right_) {
@@ -322,6 +323,10 @@ AttrType ArithmeticExpr::value_type() const
   if (left_->value_type() == AttrType::INTS && right_->value_type() == AttrType::INTS &&
       arithmetic_type_ != Type::DIV) {
     return AttrType::INTS;
+  }
+
+  if(left_->value_type() == AttrType::VECTORS || right_->value_type() == AttrType::VECTORS) {
+    return AttrType::VECTORS;
   }
 
   return AttrType::FLOATS;
@@ -612,3 +617,189 @@ RC AggregateExpr::type_from_string(const char *type_str, AggregateExpr::Type &ty
   }
   return rc;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+VectorExpr::VectorExpr(Type type, Expression *left, Expression *right)
+    : vector_type_(type), left_(left), right_(right)
+{}
+
+VectorExpr::VectorExpr(Type type, unique_ptr<Expression> left, unique_ptr<Expression> right)
+    : vector_type_(type), left_(std::move(left)), right_(std::move(right))
+{}
+
+bool VectorExpr::equal(const Expression &other) const
+{
+  if (this == &other) {
+    return true;
+  }
+  if (other.type() != ExprType::VECTOR_EXPR) {
+    return false;
+  }
+  const auto &other_vector_expr = static_cast<const VectorExpr &>(other);
+  return vector_type_ == other_vector_expr.vector_type() && left_->equal(*other_vector_expr.left_) &&
+         right_->equal(*other_vector_expr.right_);
+}
+
+AttrType VectorExpr::value_type() const
+{
+  return AttrType::VECTORS;
+}
+
+RC VectorExpr::get_value(const Tuple &tuple, Value &value) const
+{
+  RC rc = RC::SUCCESS;
+
+  Value left_value;
+  Value right_value;
+
+  rc = left_->get_value(tuple, left_value);
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
+    return rc;
+  }
+  rc = right_->get_value(tuple, right_value);
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to get value of right expression. rc=%s", strrc(rc));
+    return rc;
+  }
+  return calc_value(left_value, right_value, value);
+}
+
+RC VectorExpr::calc_value(const Value &left_value, const Value &right_value, Value &value) const
+{
+  RC rc = RC::SUCCESS;
+
+  const AttrType target_type = value_type();
+  value.set_type(target_type);
+
+  switch (vector_type_) {
+    case Type::L2_DISTANCE: {
+      Value::L2_DISTANCE(left_value, right_value, value);
+    } break;
+
+    case Type::COSINE_DISTANCE: {
+      Value::COSINE_DISTANCE(left_value, right_value, value);
+    } break;
+
+    case Type::INNER_PRODUCT: {
+      Value::INNER_PRODUCT(left_value, right_value, value);
+    } break;
+
+    default: {
+      rc = RC::INTERNAL;
+      LOG_WARN("unsupported vector_type_ type. %d", vector_type_);
+    } break;
+  }
+  return rc;
+}
+
+// template <bool LEFT_CONSTANT, bool RIGHT_CONSTANT>
+// RC VectorExpr::execute_calc(
+//     const Column &left, const Column &right, Column &result, Type type, AttrType attr_type) const
+// {
+//   RC rc = RC::SUCCESS;
+//   switch (type) {
+//     case Type::L2_DISTANCE: {
+//       if (attr_type == AttrType::VECTORS) {
+//         binary_operator<LEFT_CONSTANT, RIGHT_CONSTANT, std::vector<double>, L2DistanceOperator>(
+//             (std::vector<double> *)left.data(), (std::vector<double> *)right.data(), (std::vector<double> *)result.data(), result.capacity());
+//       } else {
+//         rc = RC::UNIMPLEMENTED;
+//       }
+//     } break;
+//     case Type::COSINE_DISTANCE: {
+//       if (attr_type == AttrType::VECTORS) {
+//         binary_operator<LEFT_CONSTANT, RIGHT_CONSTANT, std::vector<double>, CosineDistanceOperator>(
+//             (std::vector<double> *)left.data(), (std::vector<double> *)right.data(), (std::vector<double> *)result.data(), result.capacity());
+//       } else {
+//         rc = RC::UNIMPLEMENTED;
+//       }
+//     } break;
+//     case Type::INNER_PRODUCT: {
+//       if (attr_type == AttrType::VECTORS) {
+//         binary_operator<LEFT_CONSTANT, RIGHT_CONSTANT, std::vector<double>, InnerProductOperator>(
+//             (std::vector<double> *)left.data(), (std::vector<double> *)right.data(), (std::vector<double> *)result.data(), result.capacity());
+//       } else {
+//         rc = RC::UNIMPLEMENTED;
+//       }
+//     } break;
+//     default: rc = RC::UNIMPLEMENTED; break;
+//   }
+//   if (rc == RC::SUCCESS) {
+//     result.set_count(result.capacity());
+//   }
+//   return rc;
+// }
+
+// RC VectorExpr::get_column(Chunk &chunk, Column &column)
+// {
+//   RC rc = RC::SUCCESS;
+//   if (pos_ != -1) {
+//     column.reference(chunk.column(pos_));
+//     return rc;
+//   }
+//   Column left_column;
+//   Column right_column;
+
+//   rc = left_->get_column(chunk, left_column);
+//   if (rc != RC::SUCCESS) {
+//     LOG_WARN("failed to get column of left expression. rc=%s", strrc(rc));
+//     return rc;
+//   }
+//   rc = right_->get_column(chunk, right_column);
+//   if (rc != RC::SUCCESS) {
+//     LOG_WARN("failed to get column of right expression. rc=%s", strrc(rc));
+//     return rc;
+//   }
+//   return calc_column(left_column, right_column, column);
+// }
+
+// RC VectorExpr::calc_column(const Column &left_column, const Column &right_column, Column &column) const
+// {
+//   RC rc = RC::SUCCESS;
+
+//   const AttrType target_type = value_type();
+//   column.init(target_type, left_column.attr_len(), std::max(left_column.count(), right_column.count()));
+//   bool left_const  = left_column.column_type() == Column::Type::CONSTANT_COLUMN;
+//   bool right_const = right_column.column_type() == Column::Type::CONSTANT_COLUMN;
+//   if (left_const && right_const) {
+//     column.set_column_type(Column::Type::CONSTANT_COLUMN);
+//     rc = execute_calc<true, true>(left_column, right_column, column, vector_type_, target_type);
+//   } else if (left_const && !right_const) {
+//     column.set_column_type(Column::Type::NORMAL_COLUMN);
+//     rc = execute_calc<true, false>(left_column, right_column, column, vector_type_, target_type);
+//   } else if (!left_const && right_const) {
+//     column.set_column_type(Column::Type::NORMAL_COLUMN);
+//     rc = execute_calc<false, true>(left_column, right_column, column, vector_type_, target_type);
+//   } else {
+//     column.set_column_type(Column::Type::NORMAL_COLUMN);
+//     rc = execute_calc<false, false>(left_column, right_column, column, vector_type_, target_type);
+//   }
+//   return rc;
+// }
+
+RC VectorExpr::try_get_value(Value &value) const
+{
+  RC rc = RC::SUCCESS;
+
+  Value left_value;
+  Value right_value;
+
+  rc = left_->try_get_value(left_value);
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
+    return rc;
+  }
+
+  if (right_) {
+    rc = right_->try_get_value(right_value);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to get value of right expression. rc=%s", strrc(rc));
+      return rc;
+    }
+  }
+
+  return calc_value(left_value, right_value, value);
+}
+

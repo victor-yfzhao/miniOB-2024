@@ -41,6 +41,17 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
   return expr;
 }
 
+VectorExpr *create_vector_expression(VectorExpr::Type type,
+                                     Expression *left,
+                                     Expression *right,
+                                     const char *sql_string,
+                                     YYLTYPE *llocp)
+{
+  VectorExpr *expr = new VectorExpr(type, left, right);
+  expr->set_name(token_name(sql_string, llocp));
+  return expr;
+}
+
 UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
                                            Expression *child,
                                            const char *sql_string,
@@ -97,6 +108,9 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         STRING_T
         FLOAT_T
         VECTOR_T
+        L2_DISTANCE
+        COSINE_DISTANCE
+        INNER_PRODUCT
         DATE_T // ADD DATE
         HELP
         EXIT
@@ -599,6 +613,15 @@ expression:
     }
     | '*' {
       $$ = new StarExpr();
+    }
+    | L2_DISTANCE LBRACE expression COMMA expression RBRACE {
+      $$ = create_vector_expression(VectorExpr::Type::L2_DISTANCE, $3, $5, sql_string, &@$);
+    }
+    | COSINE_DISTANCE LBRACE expression COMMA expression RBRACE {
+      $$ = create_vector_expression(VectorExpr::Type::COSINE_DISTANCE, $3, $5, sql_string, &@$);
+    }
+    | INNER_PRODUCT LBRACE expression COMMA expression RBRACE {
+      $$ = create_vector_expression(VectorExpr::Type::INNER_PRODUCT, $3, $5, sql_string, &@$);
     }
     // your code here
     | COUNT LBRACE expression RBRACE{

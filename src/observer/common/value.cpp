@@ -99,6 +99,12 @@ void Value::reset()
         value_.pointer_value_ = nullptr;
       }
       break;
+    case AttrType::VECTORS:
+      // if (own_data_ && value_.vector_value_ != nullptr) {
+      //   delete value_.vector_value_;
+      //   value_.vector_value_ = nullptr;
+      // }
+      break;
     default: break;
   }
 
@@ -128,6 +134,14 @@ void Value::set_data(char *data, int length)
     case AttrType::BOOLEANS: {
       value_.bool_value_ = *(int *)data != 0;
       length_            = length;
+    } break;
+    case AttrType::VECTORS: {
+      uint64_t offset;
+      memcpy(&offset, data, sizeof(uint64_t));
+      uint64_t address = BASE_ADDRESS + offset;
+      std::vector<double>* vec = reinterpret_cast<std::vector<double>*>(address);
+      set_vector(vec);
+      length_              = length;
     } break;
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);
@@ -164,6 +178,28 @@ void Value::set_date(int val)
   attr_type_        = AttrType::DATES;
   value_.int_value_ = val;
   length_           = sizeof(val);
+}
+void Value::set_vector(const std::vector<double>* val)
+{
+  reset();
+  attr_type_ = AttrType::VECTORS;
+  if (val == nullptr)
+  {
+    value_.vector_value_ = nullptr;
+    length_ = 0;
+  }else{
+    own_data_ = true;
+    value_.vector_value_ = new std::vector<double>(*val); // 使用复制构造函数
+    length_ = value_.vector_value_->size();
+  }
+}
+
+std::vector<double>* Value::get_vector() const
+{
+  if (attr_type_ != AttrType::VECTORS) {
+    return nullptr;
+  }
+  return value_.vector_value_;
 }
 
 void Value::set_string(const char *s, int len /*= 0*/)
@@ -205,6 +241,9 @@ void Value::set_value(const Value &value)
     case AttrType::DATES: {
       set_date(value.get_date());
     } break;
+    case AttrType::VECTORS: {
+      set_vector(value.get_vector());
+    } break;
     default: {
       ASSERT(false, "got an invalid value type");
     } break;
@@ -221,11 +260,23 @@ void Value::set_string_from_other(const Value &other)
   }
 }
 
+uint64_t Value::BASE_ADDRESS = 0x603000000000;
+
 const char *Value::data() const
 {
   switch (attr_type_) {
     case AttrType::CHARS: {
       return value_.pointer_value_;
+    } break;
+    case AttrType::VECTORS: {
+      std::vector<double> *vec = value_.vector_value_;
+      // 分配足够的内存来存储地址
+      char* address_bytes = new char[sizeof(uint64_t)];
+      // 将地址序列化到分配的内存中
+      uint64_t address = reinterpret_cast<uint64_t>(vec);
+      Value::BASE_ADDRESS = address & 0xFFFFFF000000;      memcpy(address_bytes, &address, sizeof(uint64_t));
+      // 返回地址字节数组
+      return address_bytes;  
     } break;
     default: {
       return (const char *)&value_;
