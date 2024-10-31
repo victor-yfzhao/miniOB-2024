@@ -69,6 +69,11 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         CREATE
         DROP
         GROUP
+        COUNT // ADD COUNT
+        SUM //ADD SUM
+        MAX //ADD MAX
+        MIN //ADD MIN
+        AVG //ADD AVG
         TABLE
         TABLES
         INDEX
@@ -87,6 +92,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         TRX_BEGIN
         TRX_COMMIT
         TRX_ROLLBACK
+        NULL_T // ADD NULL
         INT_T
         STRING_T
         FLOAT_T
@@ -126,6 +132,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   RelAttrSqlNode *                           rel_attr;
   std::vector<AttrInfoSqlNode> *             attr_infos;
   AttrInfoSqlNode *                          attr_info;
+  KVPairNode *                               kv_pair;
+  std::vector<KVPairNode> *                  kv_pair_list;
   Expression *                               expression;
   std::vector<std::unique_ptr<Expression>> * expression_list;
   std::vector<Value> *                       value_list;
@@ -158,6 +166,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <condition_list>      condition_list
 %type <string>              storage_format
 %type <relation_list>       rel_list
+%type <kv_pair>             kv_pair
+%type <kv_pair_list>        kv_pair_list
 %type <expression>          expression
 %type <expression_list>     expression_list
 %type <expression_list>     group_by
@@ -425,6 +435,10 @@ value:
       $$ = new Value((float)$1);
       @$ = @1;
     }
+    | NULL_T {
+      $$ = new Value(AttrType::NULLS, nullptr);
+      @$ = @1;
+    }
     |SSS {
       char *tmp = common::substr($1,1,strlen($1)-2);
       $$ = new Value(tmp);
@@ -456,20 +470,52 @@ delete_stmt:    /*  delete 语句的语法解析树*/
     }
     ;
 update_stmt:      /*  update 语句的语法解析树*/
-    UPDATE ID SET ID EQ value where 
+    UPDATE ID SET kv_pair_list where 
     {
       $$ = new ParsedSqlNode(SCF_UPDATE);
       $$->update.relation_name = $2;
-      $$->update.attribute_name = $4;
-      $$->update.value = *$6;
-      if ($7 != nullptr) {
-        $$->update.conditions.swap(*$7);
-        delete $7;
+      if ($4 != nullptr) {
+        $$->update.kv_pairs.swap(*$4);
+        delete $4;
+      }
+      if ($5 != nullptr) {
+        $$->update.conditions.swap(*$5);
+        delete $5;
       }
       free($2);
-      free($4);
     }
     ;
+
+kv_pair_list:
+    kv_pair
+    {
+      $$ = new std::vector<KVPairNode>;
+      $$->emplace_back(*$1);
+      delete $1;
+    }
+    | kv_pair COMMA kv_pair_list
+    {
+      if ($3 != nullptr) {
+        $$ = $3;
+      } else {
+        $$ = new std::vector<KVPairNode>;
+      }
+      $$->emplace_back(*$1);
+      delete $1;
+    }
+    ;
+
+kv_pair:
+    ID EQ value
+    {
+      $$ = new KVPairNode;
+      $$->key = $1;
+      $$->value = *$3;
+      free($1);
+      delete $3;
+    }
+    ;
+  
 select_stmt:        /*  select 语句的语法解析树*/
     SELECT expression_list FROM rel_list where group_by
     {
@@ -555,6 +601,21 @@ expression:
       $$ = new StarExpr();
     }
     // your code here
+    | COUNT LBRACE expression RBRACE{
+      $$ = create_aggregate_expression("count", $3, sql_string, &@$);
+    }
+    | SUM LBRACE expression RBRACE{ 
+      $$ = create_aggregate_expression("sum",   $3, sql_string, &@$);
+    }
+    | AVG LBRACE expression RBRACE{
+      $$ = create_aggregate_expression("avg",   $3, sql_string, &@$);
+    }
+    | MAX LBRACE expression RBRACE{
+      $$ = create_aggregate_expression("max",   $3, sql_string, &@$);
+    }
+    | MIN LBRACE expression RBRACE{
+      $$ = create_aggregate_expression("min",   $3, sql_string, &@$);
+    }
     ;
 
 rel_attr:

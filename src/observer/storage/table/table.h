@@ -28,6 +28,7 @@ class ChunkFileScanner;
 class ConditionFilter;
 class DefaultConditionFilter;
 class Index;
+class MultiIndex;
 class IndexScanner;
 class RecordDeleter;
 class Trx;
@@ -81,17 +82,18 @@ public:
    * @details 在表文件和索引中插入关联数据。这里只管在表中插入数据，不关心事务相关操作。
    * @param record[in/out] 传入的数据包含具体的数据，插入成功会通过此字段返回RID
    */
-  RC insert_record(Record &record);
-  RC delete_record(const Record &record);
+  RC insert_record(Record &record, Trx *trx);
+  RC delete_record(const Record &record, Trx *trx);
   RC delete_record(const RID &rid);
-  RC update_record(const Record &record);
-  // RC update_record(const RID &rid);
+  RC update_record(const Record &record, Trx *trx);
   RC get_record(const RID &rid, Record &record);
 
   RC recover_insert_record(Record &record);
 
   // TODO refactor
   RC create_index(Trx *trx, const FieldMeta *field_meta, const char *index_name, bool unique = false);
+
+  RC create_multi_index(Trx *trx, const vector<FieldMeta> &field_metas, const char *index_name, bool unique = false);
 
   RC get_record_scanner(RecordFileScanner &scanner, Trx *trx, ReadWriteMode mode);
 
@@ -119,9 +121,13 @@ public:
   RC sync();
 
 private:
-  RC insert_entry_of_indexes(const char *record, const RID &rid);
-  RC delete_entry_of_indexes(const char *record, const RID &rid, bool error_on_not_exists);
+  RC insert_entry_of_indexes(const char *record, const RID &rid, Trx *trx);
+  RC delete_entry_of_indexes(const char *record, const RID &rid, bool error_on_not_exists, Trx *trx);
   RC set_value_to_record(char *record_data, const Value &value, const FieldMeta *field);
+  RC insert_into_multi_index(const char *record, const RID &rid, const MultiIndex *multi_index, Trx *trx);
+  RC delete_from_multi_index(const char *record, const RID &rid, const MultiIndex *multi_index, Trx *trx);
+  
+  RC compare_record_multi_index(const char *former_record, const char *latter_record, const MultiIndex *multi_index, bool &result);
 
 private:
   RC init_record_handler(const char *base_dir);

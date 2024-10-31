@@ -18,17 +18,15 @@ See the Mulan PSL v2 for more details. */
 #include "storage/db/db.h"
 #include "storage/table/table.h"
 
-UpdateStmt::UpdateStmt(Table *table, const Value *values, int value_amount, FilterStmt *filter_stmt, Field field, std::string field_name)
-    : table_(table), values_(values), value_amount_(value_amount), filter_stmt_(filter_stmt), field_(field), field_name_(field_name) 
-{}
-
+UpdateStmt::UpdateStmt(Table *table, FilterStmt *filter_stmt)
+    : table_(table), filter_stmt_(filter_stmt) {}
 
 RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
 {
   const char *table_name = update.relation_name.c_str();
   if (nullptr == db || nullptr == table_name) {
-    LOG_WARN("invalid argument. db=%p, table_name=%p, value=%s",
-        db, table_name, update.value);
+    LOG_WARN("invalid argument. db=%p, table_name=%p",
+        db, table_name);
     return RC::INVALID_ARGUMENT;
   }
 
@@ -37,14 +35,6 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
   if (nullptr == table) {
     LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
     return RC::SCHEMA_TABLE_NOT_EXIST;
-  }
-
-  // check whether the field exists
-  TableMeta table_meta = table->table_meta();
-  const FieldMeta *field_meta = table_meta.field(update.attribute_name.c_str());
-  if (nullptr == field_meta) {
-    LOG_WARN("no such field. table=%s, field=%s", table_name, update.attribute_name.c_str());
-    return RC::SCHEMA_FIELD_NOT_EXIST;
   }
 
   // check whether the condition argument is valid
@@ -60,6 +50,24 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
   }
 
   // everything alright
-  stmt = new UpdateStmt(table, &update.value, 1, filter_stmt, Field(table, field_meta), update.attribute_name);
+  UpdateStmt *stmt_tmp = new UpdateStmt(table, filter_stmt);
+  
+  // check whether the field exists
+  TableMeta table_meta = table->table_meta();
+  for (KVPairNode kv_pair : update.kv_pairs) {
+    const FieldMeta *field = table_meta.field(kv_pair.key.c_str());
+
+    if (nullptr == field) {
+      LOG_WARN("no such field in table: table %s, field %s", table->name(), kv_pair.key.c_str());
+      return RC::SCHEMA_FIELD_NOT_EXIST;
+    }
+
+    const Value *_value = new Value(kv_pair.value);
+
+    stmt_tmp->kv_pairs_.insert(std::pair<std::string, const Value *>(kv_pair.key, _value));
+  }
+  
+  stmt = stmt_tmp;
+
   return RC::SUCCESS;
 }

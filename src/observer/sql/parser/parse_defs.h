@@ -126,6 +126,12 @@ struct DeleteSqlNode
   std::vector<ConditionSqlNode> conditions;
 };
 
+struct KVPairNode
+{
+  std::string key;
+  Value       value;
+};
+
 /**
  * @brief 描述一个update语句
  * @ingroup SQLParser
@@ -133,8 +139,7 @@ struct DeleteSqlNode
 struct UpdateSqlNode
 {
   std::string                   relation_name;   ///< Relation to update
-  std::string                   attribute_name;  ///< 更新的字段，仅支持一个字段
-  Value                         value;           ///< 更新的值，仅支持一个字段
+  std::vector<KVPairNode>       kv_pairs;        ///< 更新的键值对
   std::vector<ConditionSqlNode> conditions;
 };
 
