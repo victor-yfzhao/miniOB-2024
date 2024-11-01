@@ -228,8 +228,13 @@ RC VectorType::COSINE_DISTANCE(const Value &left, const Value &right, Value &res
     left_norm += left_vector[i] * left_vector[i];
     right_norm += right_vector[i] * right_vector[i];
   }
-
-  result.set_float(1 - dot_product / (sqrt(left_norm) * sqrt(right_norm)));
+  float val = 1 - dot_product / (sqrt(left_norm) * sqrt(right_norm));
+  if (val <= 0)
+  {
+     val = 0;
+  }
+  
+  result.set_float(val);
 
   return RC::SUCCESS;
 }
