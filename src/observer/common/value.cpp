@@ -136,9 +136,12 @@ void Value::set_data(char *data, int length)
       length_            = length;
     } break;
     case AttrType::VECTORS: {
-      uint64_t offset;
-      memcpy(&offset, data, sizeof(uint64_t));
-      uint64_t address = BASE_ADDRESS + offset;
+      uintptr_t address_low_six;
+      memcpy(&address_low_six, data, sizeof(uintptr_t));
+      // 组合高6位和低6位恢复原始地址
+      address_low_six = address_low_six & 0x000000FFFFFF;
+
+      uintptr_t address = Value::BASE_ADDRESS | address_low_six;
       std::vector<double>* vec = reinterpret_cast<std::vector<double>*>(address);
       set_vector(vec);
       length_              = length;
@@ -269,17 +272,21 @@ const char *Value::data() const
       return value_.pointer_value_;
     } break;
     case AttrType::VECTORS: {
-      std::vector<double> *vec = value_.vector_value_;
-      // 分配足够的内存来存储地址
-      char* address_bytes = new char[sizeof(uint64_t)];
-      // 将地址序列化到分配的内存中
-      uint64_t address = reinterpret_cast<uint64_t>(vec);
-      Value::BASE_ADDRESS = address & 0xFFFFFF000000;      memcpy(address_bytes, &address, sizeof(uint64_t));
-      // 返回地址字节数组
-      return address_bytes;  
+     std::vector<double> *vec = value_.vector_value_;
+      // 分配足够的内存来存储地址的低6位
+      char * address_bytes = new char[sizeof(uintptr_t)];
+      // 获取地址
+      uintptr_t address = reinterpret_cast<uintptr_t>(vec);
+      // 取出地址的高6位并存储到 BASE_ADDRESS 中
+      Value::BASE_ADDRESS = address & 0xFFFFFF000000;
+      // 取出地址的低6位
+      uintptr_t address_low_six = address & 0x000000FFFFFF;
+      // 将地址的低6位序列化到分配的内存中
+      memcpy(address_bytes, &address_low_six, sizeof(uintptr_t));
+      return address_bytes; 
     } break;
     default: {
-      return (const char *)&value_;
+      return (const char*)&value_;
     } break;
   }
 }

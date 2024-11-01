@@ -316,6 +316,8 @@ RC Table::set_value_to_record(char *record_data, const Value &value, const Field
     if (copy_len != data_len) {
       return RC::INVALID_ARGUMENT;
     }
+  memcpy(record_data + field->offset(), value.data(), sizeof(uintptr_t));
+  return RC::SUCCESS;
   }
   memcpy(record_data + field->offset(), value.data(), copy_len);
   return RC::SUCCESS;
