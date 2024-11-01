@@ -145,7 +145,19 @@ RC VectorType::set_value_from_str(Value &val, const std::string &data) const
 
   while (std::getline(ss, item, ',')) {
     try {
-      vec->push_back(std::stod(item));
+      double item_data = std::stod(item);
+      if (floor(item_data) == item_data) {
+        vec->push_back(item_data);
+        continue;
+      } else if(floor(item_data*10) == item_data*10){
+        item_data = std::round(item_data * 10.0) / 10.0;
+        vec->push_back(item_data);
+        continue;
+      } else {
+        item_data = std::round(item_data * 100.0) / 100.0;
+        vec->push_back(item_data);
+        continue;
+      }
     } catch (const std::exception& e) {
       delete vec;
       return RC::INVALID_ARGUMENT;
