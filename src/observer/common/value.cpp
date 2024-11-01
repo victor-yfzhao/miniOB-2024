@@ -142,7 +142,7 @@ void Value::set_data(char *data, int length)
       address_low_six = address_low_six & 0x000000FFFFFF;
 
       uintptr_t address = Value::BASE_ADDRESS | address_low_six;
-      std::vector<double>* vec = reinterpret_cast<std::vector<double>*>(address);
+      std::vector<float>* vec = reinterpret_cast<std::vector<float>*>(address);
       set_vector(vec);
       length_              = length;
     } break;
@@ -182,7 +182,7 @@ void Value::set_date(int val)
   value_.int_value_ = val;
   length_           = sizeof(val);
 }
-void Value::set_vector(const std::vector<double>* val)
+void Value::set_vector(const std::vector<float>* val)
 {
   reset();
   attr_type_ = AttrType::VECTORS;
@@ -192,12 +192,12 @@ void Value::set_vector(const std::vector<double>* val)
     length_ = 0;
   }else{
     own_data_ = true;
-    value_.vector_value_ = new std::vector<double>(*val); // 使用复制构造函数
+    value_.vector_value_ = new std::vector<float>(*val); // 使用复制构造函数
     length_ = value_.vector_value_->size();
   }
 }
 
-std::vector<double>* Value::get_vector() const
+std::vector<float>* Value::get_vector() const
 {
   if (attr_type_ != AttrType::VECTORS) {
     return nullptr;
@@ -272,7 +272,7 @@ const char *Value::data() const
       return value_.pointer_value_;
     } break;
     case AttrType::VECTORS: {
-     std::vector<double> *vec = value_.vector_value_;
+     std::vector<float> *vec = value_.vector_value_;
       // 分配足够的内存来存储地址的低6位
       char * address_bytes = new char[sizeof(uintptr_t)];
       // 获取地址

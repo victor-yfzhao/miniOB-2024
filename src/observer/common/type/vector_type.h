@@ -28,7 +28,7 @@ public:
   RC add(const Value &left, const Value &right, Value &result) const override;
   RC subtract(const Value &left, const Value &right, Value &result) const override;
   RC multiply(const Value &left, const Value &right, Value &result) const override;
-  RC prepare_vectors(const Value &left, const Value &right, std::vector<double> &left_vector, std::vector<double> &right_vector) const override;
+  RC prepare_vectors(const Value &left, const Value &right, std::vector<float> &left_vector, std::vector<float> &right_vector) const override;
   RC set_value_from_str(Value &val, const string &data) const override;
 
   RC L2_DISTANCE(const Value &left, const Value &right, Value &result) const override;

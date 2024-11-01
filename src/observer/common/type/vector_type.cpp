@@ -9,8 +9,8 @@ int VectorType::compare(const Value &left, const Value &right) const
 {
   ASSERT(!(left.attr_type() != AttrType::VECTORS && right.attr_type() != AttrType::VECTORS), "invalid type");
 
-  std::vector<double> left_vector;
-  std::vector<double> right_vector;
+  std::vector<float> left_vector;
+  std::vector<float> right_vector;
 
   RC rc = prepare_vectors(left, right, left_vector, right_vector);
   if (rc != RC::SUCCESS) {
@@ -38,15 +38,15 @@ int VectorType::compare(const Value &left, const Value &right) const
 
 RC VectorType::add(const Value &left, const Value &right, Value &result) const
 {
-  std::vector<double> left_vector;
-  std::vector<double> right_vector;
+  std::vector<float> left_vector;
+  std::vector<float> right_vector;
 
   RC rc = prepare_vectors(left, right, left_vector, right_vector);
   if (rc != RC::SUCCESS) {
     return rc;
   }
 
-  result.set_vector(new std::vector<double>(left_vector.size()));
+  result.set_vector(new std::vector<float>(left_vector.size()));
   for (size_t i = 0; i < left_vector.size(); ++i) {
     result.get_vector()->at(i) = left_vector[i] + right_vector[i];
   }
@@ -56,15 +56,15 @@ RC VectorType::add(const Value &left, const Value &right, Value &result) const
 
 RC VectorType::subtract(const Value &left, const Value &right, Value &result) const
 {
-  std::vector<double> left_vector;
-  std::vector<double> right_vector;
+  std::vector<float> left_vector;
+  std::vector<float> right_vector;
 
   RC rc = prepare_vectors(left, right, left_vector, right_vector);
   if (rc != RC::SUCCESS) {
     return rc;
   }
 
-  result.set_vector(new std::vector<double>(left_vector.size()));
+  result.set_vector(new std::vector<float>(left_vector.size()));
   for (size_t i = 0; i < left_vector.size(); ++i) {
     result.get_vector()->at(i) = left_vector[i] - right_vector[i];
   }
@@ -74,15 +74,15 @@ RC VectorType::subtract(const Value &left, const Value &right, Value &result) co
 
 RC VectorType::multiply(const Value &left, const Value &right, Value &result) const
 {
-  std::vector<double> left_vector;
-  std::vector<double> right_vector;
+  std::vector<float> left_vector;
+  std::vector<float> right_vector;
 
   RC rc = prepare_vectors(left, right, left_vector, right_vector);
   if (rc != RC::SUCCESS) {
     return rc;
   }
 
-  result.set_vector(new std::vector<double>(left_vector.size()));
+  result.set_vector(new std::vector<float>(left_vector.size()));
   for (size_t i = 0; i < left_vector.size(); ++i) {
     result.get_vector()->at(i) = left_vector[i] * right_vector[i];
   }
@@ -90,7 +90,7 @@ RC VectorType::multiply(const Value &left, const Value &right, Value &result) co
   return RC::SUCCESS;
 }
 
-RC VectorType::prepare_vectors(const Value &left, const Value &right, std::vector<double> &left_vector, std::vector<double> &right_vector) const
+RC VectorType::prepare_vectors(const Value &left, const Value &right, std::vector<float> &left_vector, std::vector<float> &right_vector) const
 {
   ASSERT(left.attr_type() == AttrType::VECTORS || left.attr_type() == AttrType::CHARS, "invalid type");
   ASSERT(right.attr_type() == AttrType::VECTORS || right.attr_type() == AttrType::CHARS, "invalid type");
@@ -141,37 +141,25 @@ RC VectorType::set_value_from_str(Value &val, const std::string &data) const
   std::string vector_data = data.substr(first_embrace + 1, second_embrace - first_embrace - 1);
   std::stringstream ss(vector_data);
   std::string item;
-  std::vector<double> *vec = new std::vector<double>();
+  std::vector<float> *vec = new std::vector<float>();
 
   while (std::getline(ss, item, ',')) {
     try {
-      double item_data = std::stod(item);
-      if (floor(item_data) == item_data) {
-        vec->push_back(item_data);
-        continue;
-      } else if(floor(item_data*10) == item_data*10){
-        item_data = std::round(item_data * 10.0) / 10.0;
-        vec->push_back(item_data);
-        continue;
-      } else {
-        item_data = std::round(item_data * 100.0) / 100.0;
-        vec->push_back(item_data);
-        continue;
-      }
+      vec->push_back(std::stod(item));
     } catch (const std::exception& e) {
       delete vec;
       return RC::INVALID_ARGUMENT;
     }
   }
 
-  // 这里假设 val 是一个可以存储 vector<double>* 的类型
+  // 这里假设 val 是一个可以存储 vector<float>* 的类型
   val.set_vector(vec);
 
   return RC::SUCCESS;
 }
 RC VectorType::to_string(const Value &val, string &result) const
 {
-   const std::vector<double> *vec = val.get_vector();
+   const std::vector<float> *vec = val.get_vector();
   if (vec == nullptr || vec->empty()) {
     result = "[]";
     return RC::INVALID_ARGUMENT;
@@ -187,13 +175,21 @@ for (size_t i = 0; i < vec->size(); ++i) {
   if (i > 0) {
     ptr += snprintf(ptr, buffer_size - (ptr - buffer), ",");
   }
-  if (floor(vec->at(i)) == vec->at(i)) {
-    ptr += snprintf(ptr, buffer_size - (ptr - buffer), "%d", static_cast<int>(vec->at(i)));
-  } else if(floor(vec->at(i)*10) == vec->at(i)*10){
-    ptr += snprintf(ptr, buffer_size - (ptr - buffer), "%.1f", vec->at(i));
-  } else {
-    ptr += snprintf(ptr, buffer_size - (ptr - buffer), "%.2f", vec->at(i));
+  char temp[20];
+  snprintf(temp, sizeof(temp), "%.2f", vec->at(i));
+
+  // 删除尾随的零
+  char *end = temp + strlen(temp) - 1;
+  while (end > temp && *end == '0') {
+    *end = '\0';
+    end--;
   }
+  if (end > temp && *end == '.') {
+    *end = '\0';
+  }
+
+  ptr += snprintf(ptr, buffer_size - (ptr - buffer), "%s", temp);
+
   }
   snprintf(ptr, buffer_size - (ptr - buffer), "]");
 
@@ -204,15 +200,15 @@ for (size_t i = 0; i < vec->size(); ++i) {
 
 RC VectorType::L2_DISTANCE(const Value &left, const Value &right, Value &result) const
 {
-  std::vector<double> left_vector;
-  std::vector<double> right_vector;
+  std::vector<float> left_vector;
+  std::vector<float> right_vector;
 
   RC rc = prepare_vectors(left, right, left_vector, right_vector);
   if (rc != RC::SUCCESS) {
     return rc;
   }
 
-  double sum = 0;
+  float sum = 0;
   for (size_t i = 0; i < left_vector.size(); ++i) {
     sum += (left_vector[i] - right_vector[i]) * (left_vector[i] - right_vector[i]);
   }
@@ -224,17 +220,17 @@ RC VectorType::L2_DISTANCE(const Value &left, const Value &right, Value &result)
 
 RC VectorType::COSINE_DISTANCE(const Value &left, const Value &right, Value &result) const
 {
-  std::vector<double> left_vector;
-  std::vector<double> right_vector;
+  std::vector<float> left_vector;
+  std::vector<float> right_vector;
 
   RC rc = prepare_vectors(left, right, left_vector, right_vector);
   if (rc != RC::SUCCESS) {
     return rc;
   }
 
-  double dot_product = 0;
-  double left_norm = 0;
-  double right_norm = 0;
+  float dot_product = 0;
+  float left_norm = 0;
+  float right_norm = 0;
   for (size_t i = 0; i < left_vector.size(); ++i) {
     dot_product += left_vector[i] * right_vector[i];
     left_norm += left_vector[i] * left_vector[i];
@@ -253,15 +249,15 @@ RC VectorType::COSINE_DISTANCE(const Value &left, const Value &right, Value &res
 
 RC VectorType::INNER_PRODUCT(const Value &left, const Value &right, Value &result) const
 {
-  std::vector<double> left_vector;
-  std::vector<double> right_vector;
+  std::vector<float> left_vector;
+  std::vector<float> right_vector;
 
   RC rc = prepare_vectors(left, right, left_vector, right_vector);
   if (rc != RC::SUCCESS) {
     return rc;
   }
 
-  double sum = 0;
+  float sum = 0;
   for (size_t i = 0; i < left_vector.size(); ++i) {
     sum += left_vector[i] * right_vector[i];
   }

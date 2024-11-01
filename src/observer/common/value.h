@@ -128,7 +128,7 @@ public:
   string get_string() const;
   bool   get_boolean() const;
   int    get_date() const;
-  std::vector<double>*    get_vector() const;
+  std::vector<float>*    get_vector() const;
 
 private:
   void set_int(int val);
@@ -136,7 +136,7 @@ private:
   void set_string(const char *s, int len = 0);
   void set_string_from_other(const Value &other);
   void set_date(int val);
-  void set_vector(const std::vector<double> *val);
+  void set_vector(const std::vector<float> *val);
 private:
   AttrType attr_type_ = AttrType::UNDEFINED;
   int      length_    = 0;
@@ -147,7 +147,7 @@ private:
     float   float_value_;
     bool    bool_value_;
     char   *pointer_value_;
-    std::vector<double> *vector_value_;
+    std::vector<float> *vector_value_;
   } value_ = {.int_value_ = 0};
 
   /// 是否申请并占有内存, 目前对于 CHARS 类型 own_data_ 为true, 其余类型 own_data_ 为false

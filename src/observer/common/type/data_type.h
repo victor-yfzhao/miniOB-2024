@@ -100,7 +100,7 @@ public:
     }
     return INT32_MAX;
   }
-  virtual RC prepare_vectors(const Value &left, const Value &right, std::vector<double> &left_vector, std::vector<double> &right_vector) const { return RC::UNSUPPORTED; }
+  virtual RC prepare_vectors(const Value &left, const Value &right, std::vector<float> &left_vector, std::vector<float> &right_vector) const { return RC::UNSUPPORTED; }
 
   virtual RC set_value_from_str(Value &val, const string &data) const { return RC::UNSUPPORTED; }
 
