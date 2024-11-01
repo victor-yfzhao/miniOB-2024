@@ -616,6 +616,36 @@ expression:
     | MIN LBRACE expression RBRACE{
       $$ = create_aggregate_expression("min",   $3, sql_string, &@$);
     }
+    | COUNT LBRACE expression COMMA expression RBRACE{
+      $$ = create_aggregate_expression("count", nullptr, sql_string, &@$);
+    }
+    | SUM LBRACE expression COMMA expression RBRACE{
+      $$ = create_aggregate_expression("sum", nullptr, sql_string, &@$);
+    }
+    | AVG LBRACE expression COMMA expression RBRACE{
+      $$ = create_aggregate_expression("avg", nullptr, sql_string, &@$);
+    }
+    | MAX LBRACE expression COMMA expression RBRACE{
+      $$ = create_aggregate_expression("max", nullptr, sql_string, &@$);
+    }
+    | MIN LBRACE expression COMMA expression RBRACE{
+      $$ = create_aggregate_expression("min", nullptr, sql_string, &@$);
+    }
+    | COUNT LBRACE RBRACE{
+      $$ = create_aggregate_expression("count", nullptr, sql_string, &@$);
+    }
+    | SUM LBRACE RBRACE{
+      $$ = create_aggregate_expression("sum", nullptr, sql_string, &@$);
+    }
+    | AVG LBRACE RBRACE{
+      $$ = create_aggregate_expression("avg", nullptr, sql_string, &@$);
+    }
+    | MAX LBRACE RBRACE{
+      $$ = create_aggregate_expression("max", nullptr, sql_string, &@$);
+    }
+    | MIN LBRACE RBRACE{
+      $$ = create_aggregate_expression("min", nullptr, sql_string, &@$);
+    }
     ;
 
 rel_attr:
