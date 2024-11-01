@@ -177,6 +177,8 @@ for (size_t i = 0; i < vec->size(); ++i) {
   }
   if (floor(vec->at(i)) == vec->at(i)) {
     ptr += snprintf(ptr, buffer_size - (ptr - buffer), "%d", static_cast<int>(vec->at(i)));
+  } else if(floor(vec->at(i)*10) == vec->at(i)*10){
+    ptr += snprintf(ptr, buffer_size - (ptr - buffer), "%.1f", vec->at(i));
   } else {
     ptr += snprintf(ptr, buffer_size - (ptr - buffer), "%.2f", vec->at(i));
   }
