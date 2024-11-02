@@ -28,6 +28,10 @@ Value::Value(bool val) { set_boolean(val); }
 
 Value::Value(const char *s, int len /*= 0*/) { set_string(s, len); }
 
+Value::Value(std::vector<float> * vec){
+  set_vector(vec);
+}
+
 Value::Value(const Value &other)
 {
   this->attr_type_ = other.attr_type_;

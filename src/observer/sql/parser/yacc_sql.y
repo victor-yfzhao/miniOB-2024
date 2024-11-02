@@ -99,6 +99,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         UPDATE
         LBRACE
         RBRACE
+        LMBRACE
+        RMBRACE
         COMMA
         TRX_BEGIN
         TRX_COMMIT
@@ -154,6 +156,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   std::vector<ConditionSqlNode> *            condition_list;
   std::vector<RelAttrSqlNode> *              rel_attr_list;
   std::vector<std::string> *                 relation_list;
+  std::vector<float> *                       vector;
   char *                                     string;
   int                                        number;
   float                                      floats;
@@ -185,6 +188,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <expression>          expression
 %type <expression_list>     expression_list
 %type <expression_list>     group_by
+%type <vector>              vector
 %type <sql_node>            calc_stmt
 %type <sql_node>            select_stmt
 %type <sql_node>            insert_stmt
@@ -453,11 +457,46 @@ value:
       $$ = new Value(AttrType::NULLS, nullptr);
       @$ = @1;
     }
-    |SSS {
+    | SSS {
       char *tmp = common::substr($1,1,strlen($1)-2);
       $$ = new Value(tmp);
       free(tmp);
       free($1);
+    }
+    | LMBRACE vector RMBRACE{
+      $$ = new Value($2);
+      delete $2;
+    }
+    ;
+
+vector:
+    FLOAT {
+      $$ = new std::vector<float>();
+      $$->push_back($1);
+      @$ = @1;
+    }
+    |NUMBER {
+      $$ = new std::vector<float>();
+      $$->push_back((float)$1);
+      @$ = @1;
+    }
+    | FLOAT COMMA vector {
+      if ($3 != nullptr) {
+        $$ = $3;
+      } else {
+        $$ = new std::vector<float>;
+      }
+      $$->insert($$->begin(), $1);
+      @$ = @1;
+    }
+    | NUMBER COMMA vector {
+      if ($3 != nullptr) {
+        $$ = $3;
+      } else {
+        $$ = new std::vector<float>;
+      }
+      $$->insert($$->begin(), (float)$1);
+      @$ = @1;
     }
     ;
 storage_format:
