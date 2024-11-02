@@ -69,6 +69,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         CREATE
         DROP
         GROUP
+        HAVING //ADD HAVING
         COUNT // ADD COUNT
         SUM //ADD SUM
         MAX //ADD MAX
@@ -799,7 +800,15 @@ comp_op:
 group_by:
     /* empty */
     {
-      $$ = nullptr;
+      $$ = nullptr; // 当 GROUP BY 为空时，赋值为 nullptr
+    }
+    | GROUP BY expression_list
+    {
+      $$ = $3; // 返回 expression_list
+    }
+    | GROUP BY expression_list HAVING expression
+    {
+      $$ = nullptr ; //unable to do
     }
     ;
 load_data_stmt:
