@@ -92,7 +92,7 @@ RC TableMeta::init(int32_t table_id, const char *name, const std::vector<FieldMe
   // add _null_tag field, to record which cell is null
   const AttrInfoSqlNode _null_tag = {AttrType::CHARS, "_null_tag", trx_field_num + attributes.size() + 1, false /*nullable*/};
   rc = fields_[trx_field_num + attributes.size()].init(
-    _null_tag.name.c_str(), _null_tag.type, _null_tag.length, _null_tag.length, true /*visible*/, trx_field_num + attributes.size(), _null_tag.nullable);
+    _null_tag.name.c_str(), _null_tag.type, field_offset, _null_tag.length, true /*visible*/, trx_field_num + attributes.size(), _null_tag.nullable);
   if (OB_FAIL(rc)) {
     LOG_ERROR("Failed to init field meta. table name=%s, field name: %s", name, _null_tag.name.c_str());
     return rc;

@@ -200,7 +200,7 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
   const TupleSchema &schema   = sql_result->tuple_schema();
   const int          cell_num = schema.cell_num();
 
-  for (int i = 0; i < cell_num; i++) {
+  for (int i = 0; i < cell_num - 1; i++) {
     const TupleCellSpec &spec  = schema.cell_at(i);
     const char          *alias = spec.alias();
     if (nullptr != alias || alias[0] != 0) {
@@ -278,7 +278,7 @@ RC PlainCommunicator::write_tuple_result(SqlResult *sql_result)
     assert(tuple != nullptr);
 
     int cell_num = tuple->cell_num();
-    for (int i = 0; i < cell_num; i++) {
+    for (int i = 0; i < cell_num - 1; i++) {
       if (i != 0) {
         const char *delim = " | ";
 

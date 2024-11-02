@@ -32,6 +32,8 @@ RC NullType::cast_to(const Value &val, AttrType type, Value &result) const
 
 RC NullType::to_string(const Value &val, string &result) const
 {
-    result = "NULL";
-    return RC::SUCCESS;
+  stringstream ss;
+  ss << null_str_;
+  result = ss.str();
+  return RC::SUCCESS;
 }

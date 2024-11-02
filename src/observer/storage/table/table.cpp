@@ -278,10 +278,7 @@ RC Table::make_record(int value_num, const Value *values, Record &record)
   memset(record_data, 0, record_size);
 
   const FieldMeta *null_tag_field = table_meta_.field("_null_tag");
-  char             null_tag_string[null_tag_field->len() + 1];
-  for(size_t i = 0; i < strlen(null_tag_string); i++) {
-    null_tag_string[i] = '0';
-  }
+  string             null_tag_string(null_tag_field->len(), '0');
 
   for (int i = 0; i < value_num && OB_SUCC(rc); i++) {
     const FieldMeta *field = table_meta_.field(i + normal_field_start_index);
@@ -316,7 +313,7 @@ RC Table::make_record(int value_num, const Value *values, Record &record)
     return rc;
   }
 
-  Value null_tag_value(null_tag_string, strlen(null_tag_string));
+  Value null_tag_value(null_tag_string.c_str(), null_tag_string.length());
   rc = set_value_to_record(record_data, null_tag_value, null_tag_field);
   if (OB_FAIL(rc)) {
     LOG_WARN("failed to make record's null tag. table name:%s", table_meta_.name());

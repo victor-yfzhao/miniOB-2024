@@ -29,4 +29,7 @@ public:
   // int cast_cost(AttrType type) override;
 
   RC to_string(const Value &val, string &result) const override;
+
+private:
+  const std::string null_str_ = "NULL";
 };
