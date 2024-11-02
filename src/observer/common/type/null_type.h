@@ -18,7 +18,9 @@ public:
 
   virtual ~NullType() = default;
 
-  int compare(const Value &left, const Value &right) const override;
+  // int compare(const Value &left, const Value &right) const override;
+
+  bool is_null(const Value &val) const override;
 
   // RC subtract(const Value &left, const Value &right, Value &result) const override;
 

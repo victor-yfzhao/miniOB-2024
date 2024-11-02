@@ -99,6 +99,8 @@ public:
 
   bool like(const Value &other) const;
 
+  bool is_null() const;
+
   const char *data() const;
 
   int      length() const { return length_; }

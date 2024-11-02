@@ -261,6 +261,8 @@ int Value::compare(const Value &other) const { return DataType::type_instance(th
 
 bool Value::like(const Value &other) const { return DataType::type_instance(this->attr_type_)->like(*this, other); }
 
+bool Value::is_null() const { return DataType::type_instance(this->attr_type_)->is_null(*this); }
+
 int Value::get_int() const
 {
   switch (attr_type_) {

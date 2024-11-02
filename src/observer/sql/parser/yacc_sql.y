@@ -845,6 +845,50 @@ condition:
       delete $1;
       delete $4;
     }
+    | rel_attr IS NULL_T
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 1;
+      $$->left_attr = *$1;
+      $$->right_is_attr = 0;
+      $$->right_value = Value(AttrType::NULLS, nullptr, 0);
+      $$->comp = IS_NULL;
+
+      delete $1;
+    }
+    | rel_attr IS NOT NULL_T
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 1;
+      $$->left_attr = *$1;
+      $$->right_is_attr = 0;
+      $$->right_value = Value(AttrType::NULLS, nullptr, 0);
+      $$->comp = IS_NOT_NULL;
+
+      delete $1;
+    }
+    | value IS NULL_T
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 0;
+      $$->left_value = *$1;
+      $$->right_is_attr = 0;
+      $$->right_value = Value(AttrType::NULLS, nullptr, 0);
+      $$->comp = IS_NULL;
+
+      delete $1;
+    }
+    | value IS NOT NULL_T
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 0;
+      $$->left_value = *$1;
+      $$->right_is_attr = 0;
+      $$->right_value = Value(AttrType::NULLS, nullptr, 0);
+      $$->comp = IS_NOT_NULL;
+
+      delete $1;
+    }
     ;
 
 comp_op:
