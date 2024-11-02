@@ -94,6 +94,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         TRX_COMMIT
         TRX_ROLLBACK
         NULL_T // ADD NULL
+        NULLABLE // ADD NULLABLE
         INT_T
         STRING_T
         FLOAT_T
@@ -105,9 +106,12 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         INTO
         VALUES
         FROM
+        JOIN
+        INNER
         WHERE
         AND
         NOT // ADD NOT
+        IS // ADD IS
         LIKE_SQL // ADD LIKE
         SET
         ON
@@ -375,6 +379,34 @@ attr_def:
       $$->type = (AttrType)$2;
       $$->name = $1;
       $$->length = $4;
+      $$->nullable = false;
+      free($1);
+    }
+    | ID type LBRACE number RBRACE NULL_T
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = $4;
+      $$->nullable = true;
+      free($1);
+    }
+    | ID type LBRACE number RBRACE NULLABLE
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = $4;
+      $$->nullable = true;
+      free($1);
+    }
+    | ID type LBRACE number RBRACE NOT NULL_T
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = $4;
+      $$->nullable = false;
       free($1);
     }
     | ID type
@@ -383,6 +415,34 @@ attr_def:
       $$->type = (AttrType)$2;
       $$->name = $1;
       $$->length = 4;
+      $$->nullable = false;
+      free($1);
+    }
+    | ID type NULL_T
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = 4;
+      $$->nullable = true;
+      free($1);
+    }
+    | ID type NULLABLE
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = 4;
+      $$->nullable = true;
+      free($1);
+    }
+    | ID type NOT NULL_T
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = 4;
+      $$->nullable = false;
       free($1);
     }
     ;
@@ -437,7 +497,7 @@ value:
       @$ = @1;
     }
     | NULL_T {
-      $$ = new Value(AttrType::NULLS, nullptr);
+      $$ = new Value(AttrType::NULLS, nullptr, 0);
       @$ = @1;
     }
     |SSS {
