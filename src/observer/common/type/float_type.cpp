@@ -15,13 +15,21 @@ See the Mulan PSL v2 for more details. */
 #include "common/value.h"
 #include "common/lang/limits.h"
 #include "common/value.h"
+#include "float_type.h"
 
 int FloatType::compare(const Value &left, const Value &right) const
 {
+  if (left.attr_type() == AttrType::NULLS || right.attr_type() == AttrType::NULLS) {
+    return INT32_MAX;
+  }
+
   ASSERT(left.attr_type() == AttrType::FLOATS, "left type is not integer");
-  ASSERT(right.attr_type() == AttrType::INTS || right.attr_type() == AttrType::FLOATS, "right type is not numeric");
+  ASSERT(right.attr_type() == AttrType::INTS || right.attr_type() == AttrType::FLOATS || right.attr_type() == AttrType::NULLS, "right type is not numeric");
   float left_val  = left.get_float();
   float right_val = right.get_float();
+  if (right.attr_type() == AttrType::NULLS) {
+    return INT32_MAX;
+  }
   return common::compare_float((void *)&left_val, (void *)&right_val);
 }
 
@@ -81,5 +89,31 @@ RC FloatType::to_string(const Value &val, string &result) const
   stringstream ss;
   ss << common::double_to_str(val.value_.float_value_);
   result = ss.str();
+  return RC::SUCCESS;
+}
+
+int FloatType::cast_cost(AttrType type) 
+{ 
+  if (type == AttrType::INTS) {
+    return 1;
+  }
+  else if(type == AttrType::FLOATS){
+    return 0;
+  }
+  return INT32_MAX;
+}
+
+RC FloatType::cast_to(const Value &val, AttrType type, Value &result) const 
+{
+  // LOG_WARN("float::Casting..");
+  switch (type) {
+    case AttrType::INTS: {
+      result.set_int((int)val.get_float());
+    } break;
+    case AttrType::CHARS: {
+      return RC::UNIMPLEMENTED;
+    } break;
+    default: return RC::INVALID_ARGUMENT;
+  }
   return RC::SUCCESS;
 }

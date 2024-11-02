@@ -203,6 +203,11 @@ RC PlainCommunicator::write_result_internal(SessionEvent *event, bool &need_disc
   for (int i = 0; i < cell_num; i++) {
     const TupleCellSpec &spec  = schema.cell_at(i);
     const char          *alias = spec.alias();
+    
+    if(0 == strcmp(alias, "_null_tag")) {
+      continue;
+    }
+
     if (nullptr != alias || alias[0] != 0) {
       if (0 != i) {
         const char *delim = " | ";
@@ -274,10 +279,29 @@ RC PlainCommunicator::write_tuple_result(SqlResult *sql_result)
 {
   RC rc = RC::SUCCESS;
   Tuple *tuple = nullptr;
+
+  const TupleSchema &schema   = sql_result->tuple_schema();
+  const int          _cell_num = schema.cell_num();
+
+  bool has_null_tag = false;
+
+  for (int i = 0; i < _cell_num; i++) {
+    const TupleCellSpec &spec  = schema.cell_at(i);
+    const char          *alias = spec.alias();
+    
+    if(0 == strcmp(alias, "_null_tag")) {
+      has_null_tag = true;
+      break;
+    }
+  }
+
   while (RC::SUCCESS == (rc = sql_result->next_tuple(tuple))) {
     assert(tuple != nullptr);
 
     int cell_num = tuple->cell_num();
+
+    if (has_null_tag) cell_num--;
+
     for (int i = 0; i < cell_num; i++) {
       if (i != 0) {
         const char *delim = " | ";

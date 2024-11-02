@@ -266,7 +266,7 @@ RC Table::make_record(int value_num, const Value *values, Record &record)
 {
   RC rc = RC::SUCCESS;
   // 检查字段类型是否一致
-  if (value_num + table_meta_.sys_field_num() != table_meta_.field_num()) {
+  if (value_num + table_meta_.sys_field_num() + 1 != table_meta_.field_num()) {
     LOG_WARN("Input values don't match the table's schema, table name:%s", table_meta_.name());
     return RC::SCHEMA_FIELD_MISSING;
   }
@@ -277,9 +277,23 @@ RC Table::make_record(int value_num, const Value *values, Record &record)
   char *record_data = (char *)malloc(record_size);
   memset(record_data, 0, record_size);
 
+  const FieldMeta *null_tag_field = table_meta_.field("_null_tag");
+  string             null_tag_string(null_tag_field->len(), '0');
+
   for (int i = 0; i < value_num && OB_SUCC(rc); i++) {
     const FieldMeta *field = table_meta_.field(i + normal_field_start_index);
     const Value &    value = values[i];
+
+    if (AttrType::NULLS == value.attr_type()){
+      if (!field->nullable()) {
+        LOG_WARN("field is not nullable. table name:%s,field name:%s", table_meta_.name(), field->name());
+        rc = RC::SCHEMA_FIELD_MISSING;
+        break;
+      }
+      null_tag_string[i] = '1';
+      continue;
+    }
+
     if (field->type() != value.attr_type()) {
       Value real_value;
       rc = Value::cast_to(value, field->type(), real_value);
@@ -295,6 +309,14 @@ RC Table::make_record(int value_num, const Value *values, Record &record)
   }
   if (OB_FAIL(rc)) {
     LOG_WARN("failed to make record. table name:%s", table_meta_.name());
+    free(record_data);
+    return rc;
+  }
+
+  Value null_tag_value(null_tag_string.c_str(), null_tag_string.length());
+  rc = set_value_to_record(record_data, null_tag_value, null_tag_field);
+  if (OB_FAIL(rc)) {
+    LOG_WARN("failed to make record's null tag. table name:%s", table_meta_.name());
     free(record_data);
     return rc;
   }
@@ -662,6 +684,9 @@ RC Table::update_record(const Record &record, Trx *trx)
     return rc;
   }
 
+  /////////////IMPORTANT/////////////
+  // need to fix this function     //
+  ///////////////////////////////////
   for (Index *index : indexes_) {
 
     if (index->index_meta().is_child()) continue; // 跳过多列索引的子索引
@@ -805,6 +830,10 @@ RC Table::insert_into_multi_index(const char *record, const RID &rid, const Mult
 
   return rc;
 }
+
+/////////////IMPORTANT/////////////
+// need to fix this function     //
+///////////////////////////////////
 
 RC Table::delete_from_multi_index(const char *record, const RID &rid, const MultiIndex *multi_index, Trx *trx)
 {

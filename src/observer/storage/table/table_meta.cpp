@@ -64,23 +64,23 @@ RC TableMeta::init(int32_t table_id, const char *name, const std::vector<FieldMe
   if (trx_fields != nullptr) {
     trx_fields_ = *trx_fields;
 
-    fields_.resize(attributes.size() + trx_fields->size());
+    fields_.resize(attributes.size() + trx_fields->size() + 1);
     for (size_t i = 0; i < trx_fields->size(); i++) {
       const FieldMeta &field_meta = (*trx_fields)[i];
-      fields_[i] = FieldMeta(field_meta.name(), field_meta.type(), field_offset, field_meta.len(), false /*visible*/, field_meta.field_id());
+      fields_[i] = FieldMeta(field_meta.name(), field_meta.type(), field_offset, field_meta.len(), false /*visible*/, field_meta.field_id(), field_meta.nullable());
       field_offset += field_meta.len();
     }
 
     trx_field_num = static_cast<int>(trx_fields->size());
   } else {
-    fields_.resize(attributes.size());
+    fields_.resize(attributes.size() + 1);
   }
 
   for (size_t i = 0; i < attributes.size(); i++) {
     const AttrInfoSqlNode &attr_info = attributes[i];
     // `i` is the col_id of fields[i]
     rc = fields_[i + trx_field_num].init(
-      attr_info.name.c_str(), attr_info.type, field_offset, attr_info.length, true /*visible*/, i);
+      attr_info.name.c_str(), attr_info.type, field_offset, attr_info.length, true /*visible*/, i, attr_info.nullable);
     if (OB_FAIL(rc)) {
       LOG_ERROR("Failed to init field meta. table name=%s, field name: %s", name, attr_info.name.c_str());
       return rc;
@@ -88,6 +88,17 @@ RC TableMeta::init(int32_t table_id, const char *name, const std::vector<FieldMe
 
     field_offset += attr_info.length;
   }
+
+  // add _null_tag field, to record which cell is null
+  const AttrInfoSqlNode _null_tag = {AttrType::CHARS, "_null_tag", trx_field_num + attributes.size() + 1, false /*nullable*/};
+  rc = fields_[trx_field_num + attributes.size()].init(
+    _null_tag.name.c_str(), _null_tag.type, field_offset, _null_tag.length, true /*visible*/, trx_field_num + attributes.size(), _null_tag.nullable);
+  if (OB_FAIL(rc)) {
+    LOG_ERROR("Failed to init field meta. table name=%s, field name: %s", name, _null_tag.name.c_str());
+    return rc;
+  }
+
+  field_offset += _null_tag.length;
 
   record_size_ = field_offset;
 

@@ -91,12 +91,15 @@ public:
   void set_data(const char *data, int length) { this->set_data(const_cast<char *>(data), length); }
   void set_value(const Value &value);
   void set_boolean(bool val);
+  void set_null();
 
   string to_string() const;
 
   int compare(const Value &other) const;
 
   bool like(const Value &other) const;
+
+  bool is_null() const;
 
   const char *data() const;
 
