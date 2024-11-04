@@ -49,6 +49,8 @@ public:
 
   virtual bool like(const Value &left, const Value &right) const { return false; }
 
+  virtual bool is_null(const Value &val) const { return false; }
+
   /**
    * @brief 计算 left + right，并将结果保存到 result 中
    */

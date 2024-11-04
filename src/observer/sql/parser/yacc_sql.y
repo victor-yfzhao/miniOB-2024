@@ -80,6 +80,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         CREATE
         DROP
         GROUP
+        HAVING //ADD HAVING
         COUNT // ADD COUNT
         SUM //ADD SUM
         MAX //ADD MAX
@@ -106,6 +107,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         TRX_COMMIT
         TRX_ROLLBACK
         NULL_T // ADD NULL
+        NULLABLE // ADD NULLABLE
         INT_T
         STRING_T
         FLOAT_T
@@ -120,9 +122,16 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         INTO
         VALUES
         FROM
+        JOIN
+        INNER
         WHERE
+        IN
+        EXISTS
+        ORDER
+        ASC
         AND
         NOT // ADD NOT
+        IS // ADD IS
         LIKE_SQL // ADD LIKE
         SET
         ON
@@ -392,6 +401,34 @@ attr_def:
       $$->type = (AttrType)$2;
       $$->name = $1;
       $$->length = $4;
+      $$->nullable = false;
+      free($1);
+    }
+    | ID type LBRACE number RBRACE NULL_T
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = $4;
+      $$->nullable = true;
+      free($1);
+    }
+    | ID type LBRACE number RBRACE NULLABLE
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = $4;
+      $$->nullable = true;
+      free($1);
+    }
+    | ID type LBRACE number RBRACE NOT NULL_T
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = $4;
+      $$->nullable = false;
       free($1);
     }
     | ID type
@@ -400,6 +437,34 @@ attr_def:
       $$->type = (AttrType)$2;
       $$->name = $1;
       $$->length = 4;
+      $$->nullable = false;
+      free($1);
+    }
+    | ID type NULL_T
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = 4;
+      $$->nullable = true;
+      free($1);
+    }
+    | ID type NULLABLE
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = 4;
+      $$->nullable = true;
+      free($1);
+    }
+    | ID type NOT NULL_T
+    {
+      $$ = new AttrInfoSqlNode;
+      $$->type = (AttrType)$2;
+      $$->name = $1;
+      $$->length = 4;
+      $$->nullable = false;
       free($1);
     }
     ;
@@ -454,7 +519,7 @@ value:
       @$ = @1;
     }
     | NULL_T {
-      $$ = new Value(AttrType::NULLS, nullptr);
+      $$ = new Value(AttrType::NULLS, nullptr, 0);
       @$ = @1;
     }
     | SSS {
@@ -570,7 +635,99 @@ kv_pair:
     ;
   
 select_stmt:        /*  select 语句的语法解析树*/
-    SELECT expression_list FROM rel_list where group_by
+    SELECT expression_list FROM rel_list WHERE rel_attr IN LBRACE select_stmt RBRACE
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.expressions.swap(*$2);
+        delete $2;
+      }
+
+      if ($4 != nullptr) {
+        $$->selection.relations.swap(*$4);
+        delete $4;
+      }
+
+      ConditionSqlNode *node = new ConditionSqlNode;
+      node->left_is_attr = 1;
+      node->left_attr = *$6;
+      node->comp = EQUAL_TO;
+      $$->selection.conditions.push_back(*node);
+
+      if ($9 != nullptr) {
+        $$->selection.sub_select=&$9->selection;
+      }
+    }
+    | SELECT expression_list FROM rel_list WHERE rel_attr NOT IN LBRACE select_stmt RBRACE
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.expressions.swap(*$2);
+        delete $2;
+      }
+
+      if ($4 != nullptr) {
+        $$->selection.relations.swap(*$4);
+        delete $4;
+      }
+
+      ConditionSqlNode *node = new ConditionSqlNode;
+      node->left_is_attr = 1;
+      node->left_attr = *$6;
+      node->comp = NOT_EQUAL;
+      $$->selection.conditions.push_back(*node);
+
+      if ($10 != nullptr) {
+        $$->selection.sub_select=&$10->selection;
+      }
+    }
+    | SELECT expression_list FROM rel_list WHERE rel_attr comp_op LBRACE select_stmt RBRACE
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.expressions.swap(*$2);
+        delete $2;
+      }
+
+      if ($4 != nullptr) {
+        $$->selection.relations.swap(*$4);
+        delete $4;
+      }
+
+      ConditionSqlNode *node = new ConditionSqlNode;
+      node->left_is_attr = 1;
+      node->left_attr = *$6;
+      node->comp = $7;
+      $$->selection.conditions.push_back(*node);
+
+      if ($9 != nullptr) {
+        $$->selection.sub_select=&$9->selection;
+      }
+    }
+    |SELECT expression_list FROM rel_list WHERE LBRACE select_stmt RBRACE comp_op rel_attr
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.expressions.swap(*$2);
+        delete $2;
+      }
+
+      if ($4 != nullptr) {
+        $$->selection.relations.swap(*$4);
+        delete $4;
+      }
+
+      ConditionSqlNode *node = new ConditionSqlNode;
+      node->right_is_attr = 1;
+      node->right_attr = *$10;
+      node->comp = $9;
+      $$->selection.conditions.push_back(*node);
+
+      if ($7 != nullptr) {
+        $$->selection.sub_select=&$7->selection;
+      }
+    } 
+    | SELECT expression_list FROM rel_list where group_by
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -592,6 +749,8 @@ select_stmt:        /*  select 语句的语法解析树*/
         $$->selection.group_by.swap(*$6);
         delete $6;
       }
+
+      $$->selection.sub_select = nullptr;
     }
     ;
 calc_stmt:
@@ -677,6 +836,36 @@ expression:
     }
     | MIN LBRACE expression RBRACE{
       $$ = create_aggregate_expression("min",   $3, sql_string, &@$);
+    }
+    | COUNT LBRACE expression COMMA expression RBRACE{
+      $$ = create_aggregate_expression("count", nullptr, sql_string, &@$);
+    }
+    | SUM LBRACE expression COMMA expression RBRACE{
+      $$ = create_aggregate_expression("sum", nullptr, sql_string, &@$);
+    }
+    | AVG LBRACE expression COMMA expression RBRACE{
+      $$ = create_aggregate_expression("avg", nullptr, sql_string, &@$);
+    }
+    | MAX LBRACE expression COMMA expression RBRACE{
+      $$ = create_aggregate_expression("max", nullptr, sql_string, &@$);
+    }
+    | MIN LBRACE expression COMMA expression RBRACE{
+      $$ = create_aggregate_expression("min", nullptr, sql_string, &@$);
+    }
+    | COUNT LBRACE RBRACE{
+      $$ = create_aggregate_expression("count", nullptr, sql_string, &@$);
+    }
+    | SUM LBRACE RBRACE{
+      $$ = create_aggregate_expression("sum", nullptr, sql_string, &@$);
+    }
+    | AVG LBRACE RBRACE{
+      $$ = create_aggregate_expression("avg", nullptr, sql_string, &@$);
+    }
+    | MAX LBRACE RBRACE{
+      $$ = create_aggregate_expression("max", nullptr, sql_string, &@$);
+    }
+    | MIN LBRACE RBRACE{
+      $$ = create_aggregate_expression("min", nullptr, sql_string, &@$);
     }
     ;
 
@@ -816,6 +1005,50 @@ condition:
       delete $1;
       delete $4;
     }
+    | rel_attr IS NULL_T
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 1;
+      $$->left_attr = *$1;
+      $$->right_is_attr = 0;
+      $$->right_value = Value(AttrType::NULLS, nullptr, 0);
+      $$->comp = IS_NULL;
+
+      delete $1;
+    }
+    | rel_attr IS NOT NULL_T
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 1;
+      $$->left_attr = *$1;
+      $$->right_is_attr = 0;
+      $$->right_value = Value(AttrType::NULLS, nullptr, 0);
+      $$->comp = IS_NOT_NULL;
+
+      delete $1;
+    }
+    | value IS NULL_T
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 0;
+      $$->left_value = *$1;
+      $$->right_is_attr = 0;
+      $$->right_value = Value(AttrType::NULLS, nullptr, 0);
+      $$->comp = IS_NULL;
+
+      delete $1;
+    }
+    | value IS NOT NULL_T
+    {
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 0;
+      $$->left_value = *$1;
+      $$->right_is_attr = 0;
+      $$->right_value = Value(AttrType::NULLS, nullptr, 0);
+      $$->comp = IS_NOT_NULL;
+
+      delete $1;
+    }
     ;
 
 comp_op:
@@ -831,7 +1064,15 @@ comp_op:
 group_by:
     /* empty */
     {
-      $$ = nullptr;
+      $$ = nullptr; // 当 GROUP BY 为空时，赋值为 nullptr
+    }
+    | GROUP BY expression_list
+    {
+      $$ = $3; // 返回 expression_list
+    }
+    | GROUP BY expression_list HAVING expression
+    {
+      $$ = nullptr ; //unable to do
     }
     ;
 load_data_stmt:

@@ -150,6 +150,9 @@ void Value::set_data(char *data, int length)
       set_vector(vec);
       length_              = length;
     } break;
+    case AttrType::NULLS: {
+      length_ = length;
+    } break;
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);
     } break;
@@ -230,6 +233,13 @@ void Value::set_string(const char *s, int len /*= 0*/)
   }
 }
 
+void Value::set_null()
+{
+  reset();
+  attr_type_ = AttrType::NULLS;
+  length_    = 0;
+}
+
 void Value::set_value(const Value &value)
 {
   switch (value.attr_type_) {
@@ -250,6 +260,9 @@ void Value::set_value(const Value &value)
     } break;
     case AttrType::VECTORS: {
       set_vector(value.get_vector());
+    } break;
+    case AttrType::NULLS: {
+      set_null();
     } break;
     default: {
       ASSERT(false, "got an invalid value type");
@@ -309,6 +322,8 @@ string Value::to_string() const
 int Value::compare(const Value &other) const { return DataType::type_instance(this->attr_type_)->compare(*this, other); }
 
 bool Value::like(const Value &other) const { return DataType::type_instance(this->attr_type_)->like(*this, other); }
+
+bool Value::is_null() const { return DataType::type_instance(this->attr_type_)->is_null(*this); }
 
 int Value::get_int() const
 {

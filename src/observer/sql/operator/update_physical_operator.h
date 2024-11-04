@@ -27,6 +27,7 @@ public:
 
 private:
   RC set_value_to_record(char *record_data, const Value &value, const FieldMeta *field);
+  RC set_value_from_record(const char *record_data, const FieldMeta *field, Value &value);
 
 private:
   Table                                          *table_ = nullptr;
