@@ -109,6 +109,10 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         JOIN
         INNER
         WHERE
+        IN
+        EXISTS
+        ORDER
+        ASC
         AND
         NOT // ADD NOT
         IS // ADD IS
@@ -578,7 +582,99 @@ kv_pair:
     ;
   
 select_stmt:        /*  select 语句的语法解析树*/
-    SELECT expression_list FROM rel_list where group_by
+    SELECT expression_list FROM rel_list WHERE rel_attr IN LBRACE select_stmt RBRACE
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.expressions.swap(*$2);
+        delete $2;
+      }
+
+      if ($4 != nullptr) {
+        $$->selection.relations.swap(*$4);
+        delete $4;
+      }
+
+      ConditionSqlNode *node = new ConditionSqlNode;
+      node->left_is_attr = 1;
+      node->left_attr = *$6;
+      node->comp = EQUAL_TO;
+      $$->selection.conditions.push_back(*node);
+
+      if ($9 != nullptr) {
+        $$->selection.sub_select=&$9->selection;
+      }
+    }
+    | SELECT expression_list FROM rel_list WHERE rel_attr NOT IN LBRACE select_stmt RBRACE
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.expressions.swap(*$2);
+        delete $2;
+      }
+
+      if ($4 != nullptr) {
+        $$->selection.relations.swap(*$4);
+        delete $4;
+      }
+
+      ConditionSqlNode *node = new ConditionSqlNode;
+      node->left_is_attr = 1;
+      node->left_attr = *$6;
+      node->comp = NOT_EQUAL;
+      $$->selection.conditions.push_back(*node);
+
+      if ($10 != nullptr) {
+        $$->selection.sub_select=&$10->selection;
+      }
+    }
+    | SELECT expression_list FROM rel_list WHERE rel_attr comp_op LBRACE select_stmt RBRACE
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.expressions.swap(*$2);
+        delete $2;
+      }
+
+      if ($4 != nullptr) {
+        $$->selection.relations.swap(*$4);
+        delete $4;
+      }
+
+      ConditionSqlNode *node = new ConditionSqlNode;
+      node->left_is_attr = 1;
+      node->left_attr = *$6;
+      node->comp = $7;
+      $$->selection.conditions.push_back(*node);
+
+      if ($9 != nullptr) {
+        $$->selection.sub_select=&$9->selection;
+      }
+    }
+    |SELECT expression_list FROM rel_list WHERE LBRACE select_stmt RBRACE comp_op rel_attr
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.expressions.swap(*$2);
+        delete $2;
+      }
+
+      if ($4 != nullptr) {
+        $$->selection.relations.swap(*$4);
+        delete $4;
+      }
+
+      ConditionSqlNode *node = new ConditionSqlNode;
+      node->right_is_attr = 1;
+      node->right_attr = *$10;
+      node->comp = $9;
+      $$->selection.conditions.push_back(*node);
+
+      if ($7 != nullptr) {
+        $$->selection.sub_select=&$7->selection;
+      }
+    } 
+    | SELECT expression_list FROM rel_list where group_by
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -600,6 +696,8 @@ select_stmt:        /*  select 语句的语法解析树*/
         $$->selection.group_by.swap(*$6);
         delete $6;
       }
+
+      $$->selection.sub_select = nullptr;
     }
     ;
 calc_stmt:
