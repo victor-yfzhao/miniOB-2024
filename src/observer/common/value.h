@@ -47,7 +47,7 @@ public:
   explicit Value(float val);
   explicit Value(bool val);
   explicit Value(const char *s, int len = 0);
-
+  explicit Value(std::vector<float>*vec);
   Value(const Value &other);
   Value(Value &&other);
 
@@ -86,6 +86,21 @@ public:
     return DataType::type_instance(value.attr_type())->cast_to(value, to_type, result);
   }
 
+  static RC L2_DISTANCE(const Value &left, const Value &right, Value &result)
+  {
+    return DataType::type_instance(result.attr_type())->L2_DISTANCE(left, right, result);
+  }
+
+  static RC COSINE_DISTANCE(const Value &left, const Value &right, Value &result)
+  {
+    return DataType::type_instance(result.attr_type())->COSINE_DISTANCE(left, right, result);
+  }
+
+  static RC INNER_PRODUCT(const Value &left, const Value &right, Value &result)
+  {
+    return DataType::type_instance(result.attr_type())->INNER_PRODUCT(left, right, result);
+  }
+
   void set_type(AttrType type) { this->attr_type_ = type; }
   void set_data(char *data, int length);
   void set_data(const char *data, int length) { this->set_data(const_cast<char *>(data), length); }
@@ -105,7 +120,7 @@ public:
 
   int      length() const { return length_; }
   AttrType attr_type() const { return attr_type_; }
-
+  static uint64_t BASE_ADDRESS;
 public:
   /**
    * 获取对应的值
@@ -116,6 +131,7 @@ public:
   string get_string() const;
   bool   get_boolean() const;
   int    get_date() const;
+  std::vector<float>*    get_vector() const;
 
 private:
   void set_int(int val);
@@ -123,7 +139,7 @@ private:
   void set_string(const char *s, int len = 0);
   void set_string_from_other(const Value &other);
   void set_date(int val);
-
+  void set_vector(const std::vector<float> *val);
 private:
   AttrType attr_type_ = AttrType::UNDEFINED;
   int      length_    = 0;
@@ -134,8 +150,10 @@ private:
     float   float_value_;
     bool    bool_value_;
     char   *pointer_value_;
+    std::vector<float> *vector_value_;
   } value_ = {.int_value_ = 0};
 
   /// 是否申请并占有内存, 目前对于 CHARS 类型 own_data_ 为true, 其余类型 own_data_ 为false
   bool own_data_ = false;
+
 };

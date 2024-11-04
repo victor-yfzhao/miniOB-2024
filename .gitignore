@@ -27,3 +27,5 @@ GPATH
 GTAGS
 docs/book
 #*#
+deps/3rd/libevent
+deps/3rd/libevent

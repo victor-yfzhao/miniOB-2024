@@ -85,8 +85,11 @@ RC TableMeta::init(int32_t table_id, const char *name, const std::vector<FieldMe
       LOG_ERROR("Failed to init field meta. table name=%s, field name: %s", name, attr_info.name.c_str());
       return rc;
     }
-
+    if (attr_info.type == AttrType::VECTORS) {
+      field_offset += sizeof(uintptr_t);
+    } else {
     field_offset += attr_info.length;
+    }
   }
 
   // add _null_tag field, to record which cell is null

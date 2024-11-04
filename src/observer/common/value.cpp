@@ -28,6 +28,10 @@ Value::Value(bool val) { set_boolean(val); }
 
 Value::Value(const char *s, int len /*= 0*/) { set_string(s, len); }
 
+Value::Value(std::vector<float> * vec){
+  set_vector(vec);
+}
+
 Value::Value(const Value &other)
 {
   this->attr_type_ = other.attr_type_;
@@ -99,6 +103,12 @@ void Value::reset()
         value_.pointer_value_ = nullptr;
       }
       break;
+    case AttrType::VECTORS:
+      // if (own_data_ && value_.vector_value_ != nullptr) {
+      //   delete value_.vector_value_;
+      //   value_.vector_value_ = nullptr;
+      // }
+      break;
     default: break;
   }
 
@@ -128,6 +138,17 @@ void Value::set_data(char *data, int length)
     case AttrType::BOOLEANS: {
       value_.bool_value_ = *(int *)data != 0;
       length_            = length;
+    } break;
+    case AttrType::VECTORS: {
+      uintptr_t address_low_six;
+      memcpy(&address_low_six, data, sizeof(uintptr_t));
+      // 组合高6位和低6位恢复原始地址
+      address_low_six = address_low_six & 0x000000FFFFFF;
+
+      uintptr_t address = Value::BASE_ADDRESS | address_low_six;
+      std::vector<float>* vec = reinterpret_cast<std::vector<float>*>(address);
+      set_vector(vec);
+      length_              = length;
     } break;
     case AttrType::NULLS: {
       length_ = length;
@@ -167,6 +188,28 @@ void Value::set_date(int val)
   attr_type_        = AttrType::DATES;
   value_.int_value_ = val;
   length_           = sizeof(val);
+}
+void Value::set_vector(const std::vector<float>* val)
+{
+  reset();
+  attr_type_ = AttrType::VECTORS;
+  if (val == nullptr)
+  {
+    value_.vector_value_ = nullptr;
+    length_ = 0;
+  }else{
+    own_data_ = true;
+    value_.vector_value_ = new std::vector<float>(*val); // 使用复制构造函数
+    length_ = value_.vector_value_->size();
+  }
+}
+
+std::vector<float>* Value::get_vector() const
+{
+  if (attr_type_ != AttrType::VECTORS) {
+    return nullptr;
+  }
+  return value_.vector_value_;
 }
 
 void Value::set_string(const char *s, int len /*= 0*/)
@@ -215,6 +258,9 @@ void Value::set_value(const Value &value)
     case AttrType::DATES: {
       set_date(value.get_date());
     } break;
+    case AttrType::VECTORS: {
+      set_vector(value.get_vector());
+    } break;
     case AttrType::NULLS: {
       set_null();
     } break;
@@ -234,14 +280,30 @@ void Value::set_string_from_other(const Value &other)
   }
 }
 
+uint64_t Value::BASE_ADDRESS = 0x603000000000;
+
 const char *Value::data() const
 {
   switch (attr_type_) {
     case AttrType::CHARS: {
       return value_.pointer_value_;
     } break;
+    case AttrType::VECTORS: {
+     std::vector<float> *vec = value_.vector_value_;
+      // 分配足够的内存来存储地址的低6位
+      char * address_bytes = new char[sizeof(uintptr_t)];
+      // 获取地址
+      uintptr_t address = reinterpret_cast<uintptr_t>(vec);
+      // 取出地址的高6位并存储到 BASE_ADDRESS 中
+      Value::BASE_ADDRESS = address & 0xFFFFFF000000;
+      // 取出地址的低6位
+      uintptr_t address_low_six = address & 0x000000FFFFFF;
+      // 将地址的低6位序列化到分配的内存中
+      memcpy(address_bytes, &address_low_six, sizeof(uintptr_t));
+      return address_bytes; 
+    } break;
     default: {
-      return (const char *)&value_;
+      return (const char*)&value_;
     } break;
   }
 }

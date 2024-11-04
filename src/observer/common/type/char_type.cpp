@@ -92,6 +92,11 @@ RC CharType::cast_to(const Value &val, AttrType type, Value &result) const
     case AttrType::DATES: {
       return DataType::type_instance(AttrType::DATES)->set_value_from_str(result, val.get_string());
     }
+      break;
+    case AttrType::VECTORS: {
+      return DataType::type_instance(AttrType::VECTORS)->set_value_from_str(result, val.get_string());
+      }
+      break;  
     default: return RC::UNIMPLEMENTED;
   }
   return RC::SUCCESS;
@@ -104,6 +109,9 @@ int CharType::cast_cost(AttrType type)
   }
   if (type == AttrType::DATES) {
     return 1;
+  }
+  if (type == AttrType::VECTORS) {
+    return 0;
   }
   return INT32_MAX;
 }
