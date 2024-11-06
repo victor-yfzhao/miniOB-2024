@@ -114,6 +114,8 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
       }
       rc = RC::SUCCESS;
       table = db->find_table(left_attr->relation_name.c_str());
+      field = table->table_meta().field(left_attr->attribute_name.c_str());
+
     }
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
@@ -164,13 +166,14 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     right_attr->attribute_name = ((UnboundFieldExpr*) (condition.right_expr))->field_name();
     rc                     = get_table_and_field(db, default_table, tables, *right_attr, table, field);
     if (rc != RC::SUCCESS) {
-      right_attr->relation_name  = ((UnboundFieldExpr *)(condition.right_expr))->table_name();
+       right_attr->relation_name  = ((UnboundFieldExpr *)(condition.right_expr))->table_name();
       if(right_attr->relation_name.size()<1){
       LOG_WARN("cannot find attr");
       return rc;
       }
       rc = RC::SUCCESS;
       table = db->find_table(right_attr->relation_name.c_str());
+      field = table->table_meta().field(right_attr->attribute_name.c_str());
     }
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
