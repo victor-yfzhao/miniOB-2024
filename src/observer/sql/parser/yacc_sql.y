@@ -754,30 +754,6 @@ condition:
       $$->right_expr=$3;
       $$->comp = $2;
     }
-    | rel_attr LIKE_SQL value
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 0;
-      $$->right_value = *$3;
-      $$->comp = LIKE;
-
-      delete $1;
-      delete $3;
-    }
-    | rel_attr NOT LIKE_SQL value
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 0;
-      $$->right_value = *$4;
-      $$->comp = NOT_LIKE;
-
-      delete $1;
-      delete $4;
-    }
     ;
 
 comp_op:
@@ -787,6 +763,8 @@ comp_op:
     | LE { $$ = LESS_EQUAL; }
     | GE { $$ = GREAT_EQUAL; }
     | NE { $$ = NOT_EQUAL; }
+    | LIKE_SQL { $$ = LIKE; }
+    | NOT LIKE_SQL { $$ = NOT_LIKE; }
     ;
 
 // your code here

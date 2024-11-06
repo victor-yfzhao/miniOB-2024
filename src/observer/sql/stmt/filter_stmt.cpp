@@ -29,7 +29,7 @@ FilterStmt::~FilterStmt()
 }
 
 RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-    const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt )
+    const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt , BinderContext binder_context)
 {
   RC rc = RC::SUCCESS;
   stmt  = nullptr;
@@ -38,7 +38,7 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
   for (int i = 0; i < condition_num; i++) {
     FilterUnit *filter_unit = nullptr;
 
-    rc = create_filter_unit(db, default_table, tables, conditions[i], filter_unit );
+    rc = create_filter_unit(db, default_table, tables, conditions[i], filter_unit , binder_context);
     if (rc != RC::SUCCESS) {
       delete tmp_stmt;
       LOG_WARN("failed to create filter unit. condition index=%d", i);
@@ -80,7 +80,7 @@ RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::str
 }
 
 RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-    const ConditionSqlNode &condition, FilterUnit *&filter_unit )
+    const ConditionSqlNode &condition, FilterUnit *&filter_unit , BinderContext binder_context)
 {
   RC rc = RC::SUCCESS;
 
@@ -89,18 +89,15 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     LOG_WARN("invalid compare operator : %d", comp);
     return RC::INVALID_ARGUMENT;
   }
-  BinderContext binder_context;
   ExpressionBinder expression_binder(binder_context);
 
   vector<unique_ptr<Expression>> filter_expressions;
 
   unique_ptr<Expression> left_expression(condition.left_expr);
   expression_binder.bind_expression(left_expression, filter_expressions);
-  std::unique_ptr<Expression> &left_expr = filter_expressions[0];
 
   unique_ptr<Expression> right_expression(condition.right_expr);
   expression_binder.bind_expression(right_expression, filter_expressions);
-  std::unique_ptr<Expression> &right_expr = filter_expressions[1];
 
   filter_unit = new FilterUnit;
   if(condition.left_is_attr == 1){
@@ -124,6 +121,8 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     filter_unit->set_left(filter_obj);
     } else{
     // 通过 expr.get() 获取原始指针
+    std::unique_ptr<Expression> &left_expr = filter_expressions[0];
+
     // Expression *raw_expr = expr.get();
     // 使用 raw_expr 进行操作
     FilterObj filter_obj;
@@ -174,6 +173,7 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     filter_unit->set_right(filter_obj);
     } else{
     // 通过索引访问 std::unique_ptr<Expression>
+    std::unique_ptr<Expression> &right_expr = filter_expressions[1];
     // Expression *raw_expr = expr.get();
     FilterObj filter_obj;
     filter_obj.init_expr(right_expr);

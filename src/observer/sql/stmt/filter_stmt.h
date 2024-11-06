@@ -16,6 +16,7 @@ See the Mulan PSL v2 for more details. */
 
 #include "sql/expr/expression.h"
 #include "sql/parser/parse_defs.h"
+#include "sql/parser/expression_binder.h"
 #include "sql/stmt/stmt.h"
 #include <unordered_map>
 #include <vector>
@@ -104,10 +105,10 @@ public:
 
 public:
   static RC create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-      const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt );
+      const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt, BinderContext binder_context);
 
   static RC create_filter_unit(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-      const ConditionSqlNode &condition, FilterUnit *&filter_unit );
+      const ConditionSqlNode &condition, FilterUnit *&filter_unit , BinderContext binder_context);
 
 private:
   std::vector<FilterUnit *> filter_units_;  // 默认当前都是AND关系
