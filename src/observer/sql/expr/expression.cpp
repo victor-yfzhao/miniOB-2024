@@ -327,7 +327,6 @@ bool ArithmeticExpr::equal(const Expression &other) const
   return arithmetic_type_ == other_arith_expr.arithmetic_type() && left_->equal(*other_arith_expr.left_) &&
          right_->equal(*other_arith_expr.right_);
 }
-
 AttrType ArithmeticExpr::value_type() const
 {
   if (!right_) {
@@ -343,6 +342,9 @@ AttrType ArithmeticExpr::value_type() const
     return AttrType::VECTORS;
   }
 
+  if(left_->value_type() == AttrType::UNDEFINED || right_->value_type() == AttrType::UNDEFINED) {
+    return AttrType::INTS;
+  }
   return AttrType::FLOATS;
 }
 

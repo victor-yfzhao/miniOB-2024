@@ -35,6 +35,10 @@ int FloatType::compare(const Value &left, const Value &right) const
 
 RC FloatType::add(const Value &left, const Value &right, Value &result) const
 {
+  if (right.attr_type() == AttrType::NULLS) {
+    result.set_null();
+    return RC::SUCCESS;
+  }
   result.set_float(left.get_float() + right.get_float());
   return RC::SUCCESS;
 }
@@ -54,7 +58,7 @@ RC FloatType::divide(const Value &left, const Value &right, Value &result) const
   if (right.get_float() > -EPSILON && right.get_float() < EPSILON) {
     // NOTE:
     // 设置为浮点数最大值是不正确的。通常的做法是设置为NULL，但是当前的miniob没有NULL概念，所以这里设置为浮点数最大值。
-    result.set_float(numeric_limits<float>::max());
+    result.set_null();
   } else {
     result.set_float(left.get_float() / right.get_float());
   }
@@ -91,29 +95,34 @@ RC FloatType::to_string(const Value &val, string &result) const
   result = ss.str();
   return RC::SUCCESS;
 }
-
-int FloatType::cast_cost(AttrType type) 
-{ 
-  if (type == AttrType::INTS) {
+int FloatType::cast_cost(AttrType type)
+{
+  if(type == AttrType::INTS){
     return 1;
   }
   else if(type == AttrType::FLOATS){
     return 0;
   }
   return INT32_MAX;
+  
 }
 
-RC FloatType::cast_to(const Value &val, AttrType type, Value &result) const 
+RC FloatType::cast_to(const Value&val, AttrType type , Value &result) const
 {
-  // LOG_WARN("float::Casting..");
-  switch (type) {
-    case AttrType::INTS: {
-      result.set_int((int)val.get_float());
-    } break;
-    case AttrType::CHARS: {
-      return RC::UNIMPLEMENTED;
-    } break;
-    default: return RC::INVALID_ARGUMENT;
+  //LOG_WARN("float::Casting..")
+  switch (type)
+  {
+  case AttrType::INTS:{
+    result.set_int((int)val.get_float());
+    break;
+  }
+  case AttrType::CHARS:{
+    return RC::UNIMPLEMENTED;
+  }
+    break;
+  
+  default:
+  return RC::INVALID_ARGUMENT;
   }
   return RC::SUCCESS;
 }

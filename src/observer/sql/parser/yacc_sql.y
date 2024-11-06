@@ -635,7 +635,7 @@ kv_pair:
     ;
   
 select_stmt:        /*  select 语句的语法解析树*/
-    SELECT expression_list FROM rel_list WHERE rel_attr IN LBRACE select_stmt RBRACE
+    /* SELECT expression_list FROM rel_list WHERE rel_attr IN LBRACE select_stmt RBRACE
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -727,7 +727,7 @@ select_stmt:        /*  select 语句的语法解析树*/
         $$->selection.sub_select=&$7->selection;
       }
     } 
-    | SELECT expression_list FROM rel_list where group_by
+    |*/ SELECT expression_list FROM rel_list where group_by 
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -933,77 +933,15 @@ condition_list:
     }
     ;
 condition:
-    rel_attr comp_op value
-    {
+    expression comp_op expression {
       $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 0;
-      $$->right_value = *$3;
+      if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
+      if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
+      $$->left_expr=$1;
+      if($3->type()==ExprType::UNBOUND_FIELD){$$->right_is_attr = 1;}
+      if($3->type()==ExprType::VALUE){$$->right_is_val = 1;}
+      $$->right_expr=$3;
       $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | value comp_op value 
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 0;
-      $$->left_value = *$1;
-      $$->right_is_attr = 0;
-      $$->right_value = *$3;
-      $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | rel_attr comp_op rel_attr
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 1;
-      $$->right_attr = *$3;
-      $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | value comp_op rel_attr
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 0;
-      $$->left_value = *$1;
-      $$->right_is_attr = 1;
-      $$->right_attr = *$3;
-      $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | rel_attr LIKE_SQL value
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 0;
-      $$->right_value = *$3;
-      $$->comp = LIKE;
-
-      delete $1;
-      delete $3;
-    }
-    | rel_attr NOT LIKE_SQL value
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 0;
-      $$->right_value = *$4;
-      $$->comp = NOT_LIKE;
-
-      delete $1;
-      delete $4;
     }
     | rel_attr IS NULL_T
     {
@@ -1058,6 +996,8 @@ comp_op:
     | LE { $$ = LESS_EQUAL; }
     | GE { $$ = GREAT_EQUAL; }
     | NE { $$ = NOT_EQUAL; }
+    | LIKE_SQL { $$ = LIKE; }
+    | NOT LIKE_SQL { $$ = NOT_LIKE; }
     ;
 
 // your code here

@@ -337,7 +337,7 @@ RC ExpressionBinder::bind_arithmetic_expression(
 
   unique_ptr<Expression> &left = child_bound_expressions[0];
   if (left.get() != left_expr.get()) {
-    left_expr.reset(left.release());
+        left_expr.reset(left.release());
   }
 
   child_bound_expressions.clear();
@@ -346,6 +346,10 @@ RC ExpressionBinder::bind_arithmetic_expression(
     return rc;
   }
 
+  if (arithmetic_expr->arithmetic_type()==ArithmeticExpr::Type::NEGATIVE){
+    ValueExpr *value_expr = new ValueExpr(Value(-1));
+    child_bound_expressions.emplace_back(value_expr);
+  }
   if (child_bound_expressions.size() != 1) {
     LOG_WARN("invalid right children number of comparison expression: %d", child_bound_expressions.size());
     return RC::INVALID_ARGUMENT;

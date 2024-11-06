@@ -367,11 +367,8 @@ public:
 public:
   ArithmeticExpr(Type type, Expression *left, Expression *right);
   ArithmeticExpr(Type type, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right);
-  virtual ~ArithmeticExpr() = default;
-
   bool     equal(const Expression &other) const override;
   ExprType type() const override { return ExprType::ARITHMETIC; }
-
   AttrType value_type() const override;
   int      value_length() const override
   {

@@ -17,6 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/filter_stmt.h"
 #include "storage/db/db.h"
 #include "storage/table/table.h"
+#include "sql/parser/expression_binder.h"
 
 UpdateStmt::UpdateStmt(Table *table, FilterStmt *filter_stmt)
     : table_(table), filter_stmt_(filter_stmt) {}
@@ -36,14 +37,13 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
     LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
     return RC::SCHEMA_TABLE_NOT_EXIST;
   }
-
+  BinderContext binder_context;
   // check whether the condition argument is valid
   std::unordered_map<std::string, Table *> table_map;
   table_map.insert(std::pair<std::string, Table *>(std::string(table_name), table));
-
   FilterStmt *filter_stmt = nullptr;
   RC          rc          = FilterStmt::create(
-      db, table, &table_map, update.conditions.data(), static_cast<int>(update.conditions.size()), filter_stmt);
+      db, table, &table_map, update.conditions.data(), static_cast<int>(update.conditions.size()), filter_stmt ,binder_context );
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to create filter statement. rc=%d:%s", rc, strrc(rc));
     return rc;
