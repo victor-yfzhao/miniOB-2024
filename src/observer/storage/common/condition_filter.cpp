@@ -149,6 +149,18 @@ bool DefaultConditionFilter::filter(const Record &rec) const
     return !left_value.like(right_value);
   }
 
+  if(comp_op_ == IS_NULL) {
+    return left_value.is_null();
+  }
+
+  if(comp_op_ == IS_NOT_NULL) {
+    return !left_value.is_null();
+  }
+
+  if(left_value.attr_type() == AttrType::NULLS || right_value.attr_type() == AttrType::NULLS) {
+    return false;
+  }
+
   int cmp_result = left_value.compare(right_value);
 
   switch (comp_op_) {

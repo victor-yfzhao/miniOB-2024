@@ -51,7 +51,54 @@ RC UpdatePhysicalOperator::open(Trx *trx)
         return RC::SCHEMA_FIELD_NOT_EXIST;
       }
 
+      if (strcmp(field->name(), "_null_tag") == 0) {
+        continue;
+      }
+
       AttrType attr_type = field->type();
+      bool    nullable  = field->nullable();
+
+      if (nullable) {
+        const FieldMeta *null_tag_field = table_->table_meta().field("_null_tag");
+        Value            null_tag_value;
+        rc = set_value_from_record(new_record.data(), null_tag_field, null_tag_value);
+        if (rc != RC::SUCCESS) {
+          LOG_WARN("failed to get value from record: %s", strrc(rc));
+          return rc;
+        }
+
+        string null_tag_str = null_tag_value.to_string();
+
+        int null_index = null_tag_str.length() - (null_tag_field->field_id() - field->field_id()) - 1;
+
+        if (value->attr_type() == AttrType::NULLS) {
+          null_tag_str[null_index] = '1';
+
+          Value new_null_tag_value;
+          new_null_tag_value.set_type(AttrType::CHARS);
+          new_null_tag_value.set_data(null_tag_str.c_str(), null_tag_str.length());
+
+          rc = set_value_to_record(new_record.data(), new_null_tag_value, null_tag_field);
+          if (rc != RC::SUCCESS) {
+            LOG_WARN("failed to set value to record: %s", strrc(rc));
+            return rc;
+          }
+
+          continue;
+        }
+        
+        null_tag_str[null_index] = '0';
+
+        Value new_null_tag_value;
+        new_null_tag_value.set_type(AttrType::CHARS);
+        new_null_tag_value.set_data(null_tag_str.c_str(), null_tag_str.length());
+
+        rc = set_value_to_record(new_record.data(), new_null_tag_value, null_tag_field);
+        if (rc != RC::SUCCESS) {
+          LOG_WARN("failed to set value to record: %s", strrc(rc));
+          return rc;
+        }
+      }
 
       if (attr_type != value->attr_type()) {
         Value real_value;
@@ -94,6 +141,19 @@ RC UpdatePhysicalOperator::set_value_to_record(char *record_data, const Value &v
     }
   }
   memcpy(record_data + field->offset(), value.data(), copy_len);
+  return RC::SUCCESS;
+}
+
+RC UpdatePhysicalOperator::set_value_from_record(const char *record_data, const FieldMeta *field, Value &value)
+{
+  size_t copy_len = field->len();
+  if (field->type() == AttrType::CHARS) {
+    //copy_len++;
+  }
+
+  value.set_type(field->type());
+  value.set_data(record_data + field->offset(), copy_len);
+
   return RC::SUCCESS;
 }
 

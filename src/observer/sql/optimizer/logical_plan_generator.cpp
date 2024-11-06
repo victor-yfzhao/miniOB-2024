@@ -116,9 +116,29 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
     }
   }
 
+  unique_ptr<LogicalOperator> sub_select_oper;
+
+  RC rc = RC::SUCCESS;
+
+  if (select_stmt->sub_select()) {
+    rc = create_plan(select_stmt->sub_select(), sub_select_oper);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to create sub select logical plan. rc=%s", strrc(rc));
+      return rc;
+    }
+  }
+
+  if (sub_select_oper) {
+    if (*last_oper) {
+      sub_select_oper->add_child(std::move(*last_oper));
+    }
+
+    last_oper = &sub_select_oper;
+  }
+
   unique_ptr<LogicalOperator> predicate_oper;
 
-  RC rc = create_plan(select_stmt->filter_stmt(), predicate_oper);
+  rc = create_plan(select_stmt->filter_stmt(), predicate_oper);
   if (OB_FAIL(rc)) {
     LOG_WARN("failed to create predicate logical plan. rc=%s", strrc(rc));
     return rc;

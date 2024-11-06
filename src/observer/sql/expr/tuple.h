@@ -192,6 +192,8 @@ public:
 
   RC cell_at(int index, Value &cell) const override
   {
+    int null_tag_column_index = cell_num() - 1;
+    
     if (index < 0 || index >= static_cast<int>(speces_.size())) {
       LOG_WARN("invalid argument. index=%d", index);
       return RC::INVALID_ARGUMENT;
@@ -199,6 +201,18 @@ public:
 
     FieldExpr       *field_expr = speces_[index];
     const FieldMeta *field_meta = field_expr->field().meta();
+    FieldExpr       *null_tag_expr = speces_[null_tag_column_index];
+    const FieldMeta *null_tag_field = null_tag_expr->field().meta();
+    if (field_meta->nullable()) {
+      Value null_tag_value;
+      null_tag_value.set_type(AttrType::CHARS);
+      null_tag_value.set_data(record_->data() + null_tag_field->offset(), null_tag_field->len());
+      string null_tag_str = null_tag_value.to_string();
+      if (null_tag_str[index] == '1') {
+        cell.set_type(AttrType::NULLS);
+        return RC::SUCCESS;
+      }
+    }
     cell.set_type(field_meta->type());
     if(field_meta->type() == AttrType::VECTORS) {
       cell.set_data(this->record_->data()+ field_meta->offset(), sizeof(uintptr_t));

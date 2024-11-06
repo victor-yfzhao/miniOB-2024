@@ -92,7 +92,7 @@ TEST_P(PaxRecordFileScannerWithParam, DISABLED_test_file_iterator)
   ASSERT_EQ(rc, RC::SUCCESS);
   Chunk     chunk;
   FieldMeta fm;
-  fm.init("col1", AttrType::INTS, 0, 4, true, 0);
+  fm.init("col1", AttrType::INTS, 0, 4, true, 0, false);
   auto col1 = std::make_unique<Column>(fm, 2048);
   chunk.add_column(std::move(col1), 0);
   count = 0;
@@ -285,7 +285,7 @@ TEST_P(PaxPageHandlerTestWithParam, DISABLED_PaxPageHandler)
 
   Chunk     chunk2;
   FieldMeta fm2_1;
-  fm2_1.init("col2", AttrType::FLOATS, 4, 4, true, 1);
+  fm2_1.init("col2", AttrType::FLOATS, 4, 4, true, 1, false);
   auto col_2_1 = std::make_unique<Column>(fm2_1, 2048);
   chunk2.add_column(std::move(col_2_1), 1);
   rc = record_page_handle->get_chunk(chunk2);

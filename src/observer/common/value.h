@@ -106,12 +106,15 @@ public:
   void set_data(const char *data, int length) { this->set_data(const_cast<char *>(data), length); }
   void set_value(const Value &value);
   void set_boolean(bool val);
+  void set_null();
 
   string to_string() const;
 
   int compare(const Value &other) const;
 
   bool like(const Value &other) const;
+
+  bool is_null() const;
 
   const char *data() const;
 
@@ -150,7 +153,7 @@ private:
     std::vector<float> *vector_value_;
   } value_ = {.int_value_ = 0};
 
-  /// 是否申请并占有内存, 目前对于 CHARS 类型 own_data_ 为true, 其余类型 own_data_ 为false
+  /// 是否申请并占有内存, 目前对于 CHARS 类型 own_data_ 为true, 其余类型 own_data_为false
   bool own_data_ = false;
 
 };

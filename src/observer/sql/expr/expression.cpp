@@ -128,6 +128,16 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
     cmp_result = left.like(right);
   }
 
+  if (comp_ == IS_NULL) {
+    result = left.is_null();
+    return rc;
+  }
+
+  if (comp_ == IS_NOT_NULL) {
+    result = !left.is_null();
+    return rc;
+  }
+
   result         = false;
   switch (comp_) {
     case EQUAL_TO: {
@@ -158,6 +168,10 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
       LOG_WARN("unsupported comparison. %d", comp_);
       rc = RC::INTERNAL;
     } break;
+  }
+
+  if (right.attr_type() == AttrType::NULLS || left.attr_type() == AttrType::NULLS) {
+    result = false;
   }
 
   return rc;
