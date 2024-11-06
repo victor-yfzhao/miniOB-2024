@@ -34,6 +34,10 @@ int IntegerType::compare(const Value &left, const Value &right) const
 
 RC IntegerType::add(const Value &left, const Value &right, Value &result) const
 {
+  if(right.attr_type() == AttrType::NULLS){
+    result.set_null();
+    return RC::SUCCESS;
+  }
   result.set_int(left.get_int() + right.get_int());
   return RC::SUCCESS;
 }
