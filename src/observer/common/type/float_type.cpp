@@ -35,6 +35,10 @@ int FloatType::compare(const Value &left, const Value &right) const
 
 RC FloatType::add(const Value &left, const Value &right, Value &result) const
 {
+  if (right.attr_type() == AttrType::NULLS) {
+    result.set_null();
+    return RC::SUCCESS;
+  }
   result.set_float(left.get_float() + right.get_float());
   return RC::SUCCESS;
 }
