@@ -104,10 +104,10 @@ public:
 
 public:
   static RC create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-      const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt , vector<unique_ptr<Expression>> &filter_expressions);
+      const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt );
 
   static RC create_filter_unit(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-      const ConditionSqlNode &condition, FilterUnit *&filter_unit ,vector<unique_ptr<Expression>> &filter_expressions);
+      const ConditionSqlNode &condition, FilterUnit *&filter_unit );
 
 private:
   std::vector<FilterUnit *> filter_units_;  // 默认当前都是AND关系

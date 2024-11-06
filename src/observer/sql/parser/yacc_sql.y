@@ -746,7 +746,10 @@ condition_list:
 condition:
     expression comp_op expression {
       $$ = new ConditionSqlNode;
+      if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
+      if($1->type()==ExprType::VALUE){$$->left_is_attr = 0;}
       $$->left_expr=$1;
+      if($3->type()==ExprType::UNBOUND_FIELD){$$->right_is_attr = 1;}
       $$->right_expr=$3;
       $$->comp = $2;
     }
@@ -761,10 +764,6 @@ condition:
 
       delete $1;
       delete $3;
-      // $$ = new ConditionSqlNode;
-      // $$->left_expression=$1;
-      // $$->right_expression=$3;
-      // $$->comp = LIKE;
     }
     | rel_attr NOT LIKE_SQL value
     {
@@ -777,10 +776,6 @@ condition:
 
       delete $1;
       delete $4;
-      // $$ = new ConditionSqlNode;
-      // $$->left_expression=$1;
-      // $$->right_expression=$4;
-      // $$->comp = NOT_LIKE;
     }
     ;
 
