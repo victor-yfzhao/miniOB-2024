@@ -104,7 +104,7 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     Table           *table = nullptr;
     const FieldMeta *field = nullptr;
     RelAttrSqlNode* left_attr = new RelAttrSqlNode();
-    left_attr->attribute_name = condition.left_expr->name();
+    left_attr->attribute_name = ((UnboundFieldExpr *)(condition.left_expr))->field_name();
     rc                     = get_table_and_field(db, default_table, tables, *left_attr, table, field);
     if (rc != RC::SUCCESS) {
       LOG_WARN("cannot find attr");
@@ -156,7 +156,7 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     Table           *table = nullptr;
     const FieldMeta *field = nullptr;
     RelAttrSqlNode* right_attr = new RelAttrSqlNode();
-    right_attr->attribute_name = condition.right_expr->name();
+    right_attr->attribute_name = ((UnboundFieldExpr*) (condition.right_expr))->field_name();
     rc                     = get_table_and_field(db, default_table, tables, *right_attr, table, field);
     if (rc != RC::SUCCESS) {
       LOG_WARN("cannot find attr");
