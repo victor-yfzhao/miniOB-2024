@@ -116,19 +116,18 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
     filter_unit->set_left(filter_obj);
-    } else if(left_expr->type()==ExprType::VALUE){
+    } else if(1 == condition.left_is_val){
     FilterObj filter_obj;
     ValueExpr *  left_value_expr  = static_cast<ValueExpr *>(condition.left_expr);
     const Value left_cell       = left_value_expr->get_value();
     filter_obj.init_value(left_cell);
     filter_unit->set_left(filter_obj);
     } else{
-    std::unique_ptr<Expression> &expr = filter_expressions[0];
     // 通过 expr.get() 获取原始指针
     // Expression *raw_expr = expr.get();
     // 使用 raw_expr 进行操作
     FilterObj filter_obj;
-    filter_obj.init_expr(expr);
+    filter_obj.init_expr(left_expr);
     filter_unit->set_left(filter_obj);
     }
 
@@ -167,7 +166,7 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     FilterObj filter_obj;
     filter_obj.init_attr(Field(table, field));
     filter_unit->set_right(filter_obj);
-    } else if(right_expr->type() == ExprType::VALUE){
+    } else if(1 == condition.right_is_val){
     FilterObj filter_obj;
     ValueExpr *  right_value_expr  = static_cast<ValueExpr *>(condition.right_expr);
     const Value right_cell       = right_value_expr->get_value();
@@ -175,10 +174,9 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     filter_unit->set_right(filter_obj);
     } else{
     // 通过索引访问 std::unique_ptr<Expression>
-    std::unique_ptr<Expression> &expr = filter_expressions[1];
     // Expression *raw_expr = expr.get();
     FilterObj filter_obj;
-    filter_obj.init_expr(expr);
+    filter_obj.init_expr(right_expr);
     filter_unit->set_right(filter_obj);
     }
   // if (condition.right_is_attr) {

@@ -747,9 +747,10 @@ condition:
     expression comp_op expression {
       $$ = new ConditionSqlNode;
       if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
-      if($1->type()==ExprType::VALUE){$$->left_is_attr = 0;}
+      if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
       $$->left_expr=$1;
       if($3->type()==ExprType::UNBOUND_FIELD){$$->right_is_attr = 1;}
+      if($3->type()==ExprType::VALUE){$$->right_is_val = 1;}
       $$->right_expr=$3;
       $$->comp = $2;
     }
