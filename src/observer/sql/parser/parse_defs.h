@@ -66,6 +66,10 @@ enum CompOp
  */
 struct ConditionSqlNode
 {
+  Expression*   left_expr;
+  Expression*   right_expr;
+  int left_is_expr;
+  int right_is_expr;
   int left_is_attr;              ///< TRUE if left-hand side is an attribute
                                  ///< 1时，操作符左边是属性名，0时，是属性值
   Value          left_value;     ///< left-hand side value if left_is_attr = FALSE

@@ -83,3 +83,34 @@ RC FloatType::to_string(const Value &val, string &result) const
   result = ss.str();
   return RC::SUCCESS;
 }
+int FloatType::cast_cost(AttrType type)
+{
+  if(type == AttrType::INTS){
+    return 1;
+  }
+  else if(type == AttrType::FLOATS){
+    return 0;
+  }
+  return INT32_MAX;
+  
+}
+
+RC FloatType::cast_to(const Value&val, AttrType type , Value &result) const
+{
+  //LOG_WARN("float::Casting..")
+  switch (type)
+  {
+  case AttrType::INTS:{
+    result.set_int((int)val.get_float());
+    break;
+  }
+  case AttrType::CHARS:{
+    return RC::UNIMPLEMENTED;
+  }
+    break;
+  
+  default:
+  return RC::INVALID_ARGUMENT;
+  }
+  return RC::SUCCESS;
+}

@@ -45,10 +45,10 @@ RC DeleteStmt::create(Db *db, const DeleteSqlNode &delete_sql, Stmt *&stmt)
 
   std::unordered_map<std::string, Table *> table_map;
   table_map.insert(std::pair<std::string, Table *>(std::string(table_name), table));
-
+  vector<unique_ptr<Expression>> filter_expressions;
   FilterStmt *filter_stmt = nullptr;
   RC          rc          = FilterStmt::create(
-      db, table, &table_map, delete_sql.conditions.data(), static_cast<int>(delete_sql.conditions.size()), filter_stmt);
+      db, table, &table_map, delete_sql.conditions.data(), static_cast<int>(delete_sql.conditions.size()), filter_stmt ,filter_expressions);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to create filter statement. rc=%d:%s", rc, strrc(rc));
     return rc;

@@ -88,13 +88,25 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
   }
 
   // create filter statement in `where` statement
+  vector<unique_ptr<Expression>> filter_expressions;
+  if(static_cast<int>(select_sql.conditions.size()>0)){
+  if (select_sql.conditions.data()->left_is_expr) {
+    unique_ptr<Expression> left_expression(select_sql.conditions.data()->left_expr);
+    expression_binder.bind_expression(left_expression, filter_expressions);
+  }
+  if (select_sql.conditions.data()->right_is_expr) {
+    unique_ptr<Expression> right_expression(select_sql.conditions.data()->right_expr);
+    expression_binder.bind_expression(right_expression, filter_expressions);
+  }
+  }
   FilterStmt *filter_stmt = nullptr;
   RC          rc          = FilterStmt::create(db,
       default_table,
       &table_map,
       select_sql.conditions.data(),
       static_cast<int>(select_sql.conditions.size()),
-      filter_stmt);
+      filter_stmt,
+      filter_expressions);
   if (rc != RC::SUCCESS) {
     LOG_WARN("cannot construct filter stmt");
     return rc;

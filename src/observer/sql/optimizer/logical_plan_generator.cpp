@@ -160,19 +160,22 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
 {
   RC                                  rc = RC::SUCCESS;
   std::vector<unique_ptr<Expression>> cmp_exprs;
-  const std::vector<FilterUnit *>    &filter_units = filter_stmt->filter_units();
-  for (const FilterUnit *filter_unit : filter_units) {
-    const FilterObj &filter_obj_left  = filter_unit->left();
-    const FilterObj &filter_obj_right = filter_unit->right();
+  std::vector<FilterUnit *>    &filter_units = filter_stmt->filter_units();
+  for (FilterUnit *filter_unit : filter_units) {
+    FilterObj &filter_obj_left  = filter_unit->left();
+    FilterObj &filter_obj_right = filter_unit->right();
+  std::unique_ptr<Expression> left = filter_obj_left.is_expr 
+    ? std::move(filter_obj_left.expr)
+    : (filter_obj_left.is_attr 
+        ? std::unique_ptr<Expression>(new FieldExpr(filter_obj_left.field))
+        : std::unique_ptr<Expression>(new ValueExpr(filter_obj_left.value)));
 
-    unique_ptr<Expression> left(filter_obj_left.is_attr
-                                    ? static_cast<Expression *>(new FieldExpr(filter_obj_left.field))
-                                    : static_cast<Expression *>(new ValueExpr(filter_obj_left.value)));
-
-    unique_ptr<Expression> right(filter_obj_right.is_attr
-                                     ? static_cast<Expression *>(new FieldExpr(filter_obj_right.field))
-                                     : static_cast<Expression *>(new ValueExpr(filter_obj_right.value)));
-
+  std::unique_ptr<Expression> right = filter_obj_right.is_expr 
+    ? std::move(filter_obj_right.expr)
+        : (filter_obj_right.is_attr
+            ? std::unique_ptr<Expression>(new FieldExpr(filter_obj_right.field))
+            : std::unique_ptr<Expression>(new ValueExpr(filter_obj_right.value)));
+//!(filter_obj_left.is_expr || filter_obj_right.is_expr) &&
     if (left->value_type() != right->value_type()) {
       auto left_to_right_cost = implicit_cast_cost(left->value_type(), right->value_type());
       auto right_to_left_cost = implicit_cast_cost(right->value_type(), left->value_type());

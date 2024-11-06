@@ -27,19 +27,43 @@ class FieldMeta;
 struct FilterObj
 {
   bool  is_attr;
+  bool  is_expr = false;
   Field field;
   Value value;
+  unique_ptr<Expression> expr;
+  
+  FilterObj() = default;
+  FilterObj& operator=( FilterObj &other)
+  {
+    if (this != &other) {
+      is_attr = other.is_attr;
+      is_expr = other.is_expr;
+      field = other.field;
+      value = other.value;
+      expr = std::move(other.expr);
+    }
+    return *this;
+  }
 
   void init_attr(const Field &field)
   {
     is_attr     = true;
+    is_expr     = false;
     this->field = field;
   }
 
   void init_value(const Value &value)
   {
     is_attr     = false;
+    is_expr     = false;
     this->value = value;
+  }
+  
+  void init_expr(unique_ptr<Expression>& expr)
+  {
+    is_attr = false;
+    is_expr = true;
+    this->expr = std::move(expr);
   }
 };
 
@@ -53,11 +77,11 @@ public:
 
   CompOp comp() const { return comp_; }
 
-  void set_left(const FilterObj &obj) { left_ = obj; }
-  void set_right(const FilterObj &obj) { right_ = obj; }
+  void set_left(FilterObj &obj) { left_ = obj; }
+  void set_right(FilterObj &obj) { right_ = obj; }
 
-  const FilterObj &left() const { return left_; }
-  const FilterObj &right() const { return right_; }
+  FilterObj &left()  { return left_; }
+  FilterObj &right()  { return right_; }
 
 private:
   CompOp    comp_ = NO_OP;
@@ -76,14 +100,14 @@ public:
   virtual ~FilterStmt();
 
 public:
-  const std::vector<FilterUnit *> &filter_units() const { return filter_units_; }
+  std::vector<FilterUnit *> &filter_units()  { return filter_units_; }
 
 public:
   static RC create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-      const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt);
+      const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt , vector<unique_ptr<Expression>> &filter_expressions);
 
   static RC create_filter_unit(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-      const ConditionSqlNode &condition, FilterUnit *&filter_unit);
+      const ConditionSqlNode &condition, FilterUnit *&filter_unit ,vector<unique_ptr<Expression>> &filter_expressions);
 
 private:
   std::vector<FilterUnit *> filter_units_;  // 默认当前都是AND关系
