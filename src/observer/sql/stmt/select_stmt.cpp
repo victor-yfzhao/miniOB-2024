@@ -77,9 +77,33 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
 
   BinderContext binder_context;
 
-  // collect tables in `from` statement
+  
   vector<Table *>                tables;
   unordered_map<string, Table *> table_map;
+  //inner join 
+  for (size_t i = 0; i < select_sql.innerjoin.size(); i++) {
+    innerjoinSqlNode tmp = select_sql.innerjoin[i];
+
+    const char *table_name = tmp.relation.c_str();
+    if (nullptr == table_name) {
+      LOG_WARN("invalid argument. relation name is null. index=%d", i);
+      return RC::INVALID_ARGUMENT;
+    }
+
+    Table *table = db->find_table(table_name);
+    if (nullptr == table) {
+      LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
+      return RC::SCHEMA_TABLE_NOT_EXIST;
+    }
+
+    binder_context.add_table(table);
+    tables.push_back(table);
+    table_map.insert({table_name, table});
+
+    select_sql.conditions.emplace_back(tmp.condition);
+  }
+
+  // collect tables in `from` statement
   for (size_t i = 0; i < select_sql.relations.size(); i++) {
     const char *table_name = select_sql.relations[i].c_str();
     if (nullptr == table_name) {

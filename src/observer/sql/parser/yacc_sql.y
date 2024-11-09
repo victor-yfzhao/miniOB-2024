@@ -155,6 +155,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   Value *                                    value;
   enum CompOp                                comp;
   RelAttrSqlNode *                           rel_attr;
+  innerjoinSqlNode  *                        inner_join;
+  std::vector<innerjoinSqlNode> *            inner_join_list;
   std::vector<AttrInfoSqlNode> *             attr_infos;
   AttrInfoSqlNode *                          attr_info;
   KVPairNode *                               kv_pair;
@@ -186,6 +188,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <string>              relation
 %type <comp>                comp_op
 %type <rel_attr>            rel_attr
+%type <inner_join_list>     inner_join_list
+%type <inner_join>          inner_join
 %type <attr_infos>          attr_def_list
 %type <attr_info>           attr_def
 %type <value_list>          value_list
@@ -728,7 +732,7 @@ select_stmt:        /*  select 语句的语法解析树*/
         $$->selection.sub_select=&$7->selection;
       }
     } 
-    |*/ SELECT expression_list FROM rel_list where group_by having
+    |*/ SELECT expression_list FROM rel_list inner_join_list where group_by having
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -741,18 +745,23 @@ select_stmt:        /*  select 语句的语法解析树*/
         delete $4;
       }
 
-      if ($5 != nullptr) {
-        $$->selection.conditions.swap(*$5);
+      if($5 != nullptr) {
+        $$->selection.innerjoin.swap(*$5);
         delete $5;
       }
 
       if ($6 != nullptr) {
-        $$->selection.group_by.swap(*$6);
+        $$->selection.conditions.swap(*$6);
         delete $6;
       }
 
-      if($7 != nullptr) {
-        $$->selection.having = $7;
+      if ($7 != nullptr) {
+        $$->selection.group_by.swap(*$7);
+        delete $7;
+      }
+
+      if($8 != nullptr) {
+        $$->selection.having = $8;
       }
 
       $$->selection.sub_select = nullptr;
@@ -1013,8 +1022,30 @@ having:
     {
       $$ = $2; // 返回 expression_list
     }
+    ;
 
 // your code here
+
+inner_join_list:
+    {
+      $$ = new std::vector<innerjoinSqlNode>;
+    }
+    | inner_join inner_join_list
+    {
+      $$ = $2;
+      $$->emplace_back(*$1);
+      delete $1;
+    }
+    ;
+inner_join:
+    INNER JOIN relation ON condition
+    {
+      // 创建并填充 innerjoinSqlNode
+      $$ = new innerjoinSqlNode;
+      $$->relation  = $3;
+      $$->condition = *$5;
+    }
+    ;
 group_by:
     /* empty */
     {
