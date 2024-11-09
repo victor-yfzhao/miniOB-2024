@@ -180,6 +180,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 /** type 定义了各种解析后的结果输出的是什么类型。类型对应了 union 中的定义的成员变量名称 **/
 %type <number>              type
 %type <condition>           condition
+%type <condition>           having
 %type <value>               value
 %type <number>              number
 %type <string>              relation
@@ -727,7 +728,7 @@ select_stmt:        /*  select 语句的语法解析树*/
         $$->selection.sub_select=&$7->selection;
       }
     } 
-    |*/ SELECT expression_list FROM rel_list where group_by 
+    |*/ SELECT expression_list FROM rel_list where group_by having
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -748,6 +749,10 @@ select_stmt:        /*  select 语句的语法解析树*/
       if ($6 != nullptr) {
         $$->selection.group_by.swap(*$6);
         delete $6;
+      }
+
+      if($7 != nullptr) {
+        $$->selection.having = $7;
       }
 
       $$->selection.sub_select = nullptr;
@@ -999,6 +1004,15 @@ comp_op:
     | LIKE_SQL { $$ = LIKE; }
     | NOT LIKE_SQL { $$ = NOT_LIKE; }
     ;
+having:
+    /* empty */
+    {
+      $$ = nullptr; 
+    }
+    | HAVING condition
+    {
+      $$ = $2; // 返回 expression_list
+    }
 
 // your code here
 group_by:
@@ -1009,10 +1023,6 @@ group_by:
     | GROUP BY expression_list
     {
       $$ = $3; // 返回 expression_list
-    }
-    | GROUP BY expression_list HAVING expression
-    {
-      $$ = nullptr ; //unable to do
     }
     ;
 load_data_stmt:
