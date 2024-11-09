@@ -116,25 +116,7 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
     }
   }
 
-  unique_ptr<LogicalOperator> sub_select_oper;
-
   RC rc = RC::SUCCESS;
-
-  if (select_stmt->sub_select()) {
-    rc = create_plan(select_stmt->sub_select(), sub_select_oper);
-    if (rc != RC::SUCCESS) {
-      LOG_WARN("failed to create sub select logical plan. rc=%s", strrc(rc));
-      return rc;
-    }
-  }
-
-  if (sub_select_oper) {
-    if (*last_oper) {
-      sub_select_oper->add_child(std::move(*last_oper));
-    }
-
-    last_oper = &sub_select_oper;
-  }
 
   unique_ptr<LogicalOperator> predicate_oper;
 
@@ -181,24 +163,28 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
   RC                                  rc = RC::SUCCESS;
   std::vector<unique_ptr<Expression>> cmp_exprs;
   std::vector<FilterUnit *>    &filter_units = filter_stmt->filter_units();
+
   for (FilterUnit *filter_unit : filter_units) {
     FilterObj &filter_obj_left  = filter_unit->left();
     FilterObj &filter_obj_right = filter_unit->right();
-  std::unique_ptr<Expression> left = filter_obj_left.is_expr 
-    ? std::move(filter_obj_left.expr)
-    : (filter_obj_left.is_attr 
-        ? std::unique_ptr<Expression>(new FieldExpr(filter_obj_left.field))
-        : std::unique_ptr<Expression>(new ValueExpr(filter_obj_left.value)));
 
-  std::unique_ptr<Expression> right = filter_obj_right.is_expr 
-    ? std::move(filter_obj_right.expr)
-        : (filter_obj_right.is_attr
-            ? std::unique_ptr<Expression>(new FieldExpr(filter_obj_right.field))
-            : std::unique_ptr<Expression>(new ValueExpr(filter_obj_right.value)));
-//!(filter_obj_left.is_expr || filter_obj_right.is_expr) &&
+    std::unique_ptr<Expression> left = filter_obj_left.is_expr 
+      ? std::move(filter_obj_left.expr)
+      : (filter_obj_left.is_attr 
+          ? std::unique_ptr<Expression>(new FieldExpr(filter_obj_left.field))
+          : std::unique_ptr<Expression>(new ValueExpr(filter_obj_left.value)));
+
+    std::unique_ptr<Expression> right = filter_obj_right.is_expr 
+      ? std::move(filter_obj_right.expr)
+          : (filter_obj_right.is_attr
+              ? std::unique_ptr<Expression>(new FieldExpr(filter_obj_right.field))
+              : std::unique_ptr<Expression>(new ValueExpr(filter_obj_right.value)));
+
     if (left->value_type() != right->value_type()) {
       auto left_to_right_cost = implicit_cast_cost(left->value_type(), right->value_type());
       auto right_to_left_cost = implicit_cast_cost(right->value_type(), left->value_type());
+
+      // 选择代价小的方向进行隐式转换
       if (left_to_right_cost <= right_to_left_cost && left_to_right_cost != INT32_MAX) {
         ExprType left_type = left->type();
         auto cast_expr = make_unique<CastExpr>(std::move(left), right->value_type());
@@ -213,7 +199,8 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
         } else {
           left = std::move(cast_expr);
         }
-      } else if (right_to_left_cost < left_to_right_cost && right_to_left_cost != INT32_MAX) {
+      } 
+      else if (right_to_left_cost < left_to_right_cost && right_to_left_cost != INT32_MAX) {
         ExprType right_type = right->type();
         auto cast_expr = make_unique<CastExpr>(std::move(right), left->value_type());
         if (right_type == ExprType::VALUE) {
@@ -228,11 +215,36 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
           right = std::move(cast_expr);
         }
 
-      } else {
+      } 
+      else {
         rc = RC::UNSUPPORTED;
         LOG_WARN("unsupported cast from %s to %s", attr_type_to_string(left->value_type()), attr_type_to_string(right->value_type()));
         return rc;
       }
+    }
+
+    if (filter_obj_left.expr->type() == ExprType::SUB_SELECT){
+      auto sub_select_expr = static_cast<SubSelectExpr *>(filter_obj_left.expr.get());
+      auto sub_select_stmt = (Stmt*)sub_select_expr->sub_select();
+      unique_ptr<LogicalOperator> sub_select_oper;
+      rc = create(sub_select_stmt, sub_select_oper);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
+        return rc;
+      }
+      //sub_select_expr->set_project_oper(sub_select_oper);
+    }
+
+    if (filter_obj_right.expr->type() == ExprType::SUB_SELECT){
+      auto sub_select_expr = static_cast<SubSelectExpr *>(filter_obj_right.expr.get());
+      auto sub_select_stmt = (Stmt*)sub_select_expr->sub_select();
+      unique_ptr<LogicalOperator> sub_select_oper;
+      rc = create(sub_select_stmt, sub_select_oper);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
+        return rc;
+      }
+      //sub_select_expr->set_project_oper(sub_select_oper);
     }
 
     ComparisonExpr *cmp_expr = new ComparisonExpr(filter_unit->comp(), std::move(left), std::move(right));

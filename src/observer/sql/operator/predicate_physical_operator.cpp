@@ -30,6 +30,9 @@ RC PredicatePhysicalOperator::open(Trx *trx)
     return RC::INTERNAL;
   }
 
+  Expression *expr = expression_.get();
+  if (nullptr != expr) expr->set_trx(trx);
+
   return children_[0]->open(trx);
 }
 

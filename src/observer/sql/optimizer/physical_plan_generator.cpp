@@ -215,6 +215,42 @@ RC PhysicalPlanGenerator::create_plan(PredicateLogicalOperator &pred_oper, uniqu
   vector<unique_ptr<Expression>> &expressions = pred_oper.expressions();
   ASSERT(expressions.size() == 1, "predicate logical operator's children should be 1");
 
+  ConjunctionExpr *expr = (ConjunctionExpr*)expressions.front().get();
+  std::vector<std::unique_ptr<Expression>> cmp_exprs = expr->children();
+
+  for (auto &cmp_expr : cmp_exprs) {
+    if (cmp_expr->type() == ExprType::COMPARISON) {
+      ComparisonExpr *comparison_expr = static_cast<ComparisonExpr *>(cmp_expr.get());
+      Expression *left_expr = comparison_expr->left().get();
+      Expression *right_expr = comparison_expr->right().get();
+
+      if (left_expr->type() == ExprType::SUB_SELECT){
+        SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(left_expr);
+        LogicalOperator *sub_select_oper = sub_select_expr->project_oper();
+        unique_ptr<PhysicalOperator> sub_select_phy_oper;
+        rc = create(*sub_select_oper, sub_select_phy_oper);
+        if (rc != RC::SUCCESS) {
+          LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
+          return rc;
+        }
+        sub_select_expr->set_project_phy_oper(sub_select_phy_oper);
+      }
+
+      if (right_expr->type() == ExprType::SUB_SELECT){
+        SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(right_expr);
+        LogicalOperator *sub_select_oper = sub_select_expr->project_oper();
+        unique_ptr<PhysicalOperator> sub_select_phy_oper;
+        rc = create(*sub_select_oper, sub_select_phy_oper);
+        if (rc != RC::SUCCESS) {
+          LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
+          return rc;
+        }
+        unique_ptr<ProjectPhysicalOperator> sub_select_expr_oper(static_cast<ProjectPhysicalOperator*>(sub_select_phy_oper.release()));
+        sub_select_expr->set_project_phy_oper(sub_select_phy_oper);
+      }
+    }
+  }
+
   unique_ptr<Expression> expression = std::move(expressions.front());
   oper = unique_ptr<PhysicalOperator>(new PredicatePhysicalOperator(std::move(expression)));
   oper->add_child(std::move(child_phy_oper));

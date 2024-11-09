@@ -15,6 +15,9 @@ See the Mulan PSL v2 for more details. */
 #include "sql/expr/expression.h"
 #include "sql/expr/tuple.h"
 #include "sql/expr/arithmetic_operator.hpp"
+#include "sql/stmt/select_stmt.h"
+#include "sql/operator/logical_operator.h"
+#include "sql/operator/physical_operator.h"
 
 using namespace std;
 
@@ -140,6 +143,8 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
 
   result         = false;
   switch (comp_) {
+    case IN:
+    case NOT_IN:
     case EQUAL_TO: {
       result = (0 == cmp_result);
     } break;
@@ -202,6 +207,28 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const
 {
   Value left_value;
   Value right_value;
+
+  if (left_->type() == ExprType::SUB_SELECT) {
+    return get_value_when_have_sub_select(tuple, value, true, false);
+  }
+
+  if (right_->type() == ExprType::SUB_SELECT) {
+    return get_value_when_have_sub_select(tuple, value, false, false);
+  }
+
+  if (left_->type() == ExprType::CAST) {
+    CastExpr *cast_expr = static_cast<CastExpr *>(left_.get());
+    if (cast_expr->child()->type() == ExprType::SUB_SELECT){
+      return get_value_when_have_sub_select(tuple, value, true, true);
+    }
+  }
+
+  if (right_->type() == ExprType::CAST) {
+    CastExpr *cast_expr = static_cast<CastExpr *>(right_.get());
+    if (cast_expr->child()->type() == ExprType::SUB_SELECT){
+      return get_value_when_have_sub_select(tuple, value, false, true);
+    }
+  }
 
   RC rc = left_->get_value(tuple, left_value);
   if (rc != RC::SUCCESS) {
@@ -274,6 +301,149 @@ RC ComparisonExpr::compare_column(const Column &left, const Column &right, std::
   return rc;
 }
 
+RC ComparisonExpr::get_value_when_have_sub_select(const Tuple &tuple, Value &value, bool left, bool have_cast) const
+{
+  Value left_value;
+  Value right_value;
+  RC rc = RC::SUCCESS;
+  if (have_cast){
+    rc = RC::UNIMPLEMENTED;
+  }
+  else{
+    if (left) {
+      rc = right_->get_value(tuple, right_value);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to get value of right expression. rc=%s", strrc(rc));
+        return rc;
+      }
+
+      SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(left_.get());
+      PhysicalOperator *project_phy_oper = sub_select_expr->project_phy_oper();
+      if (project_phy_oper == nullptr) {
+        LOG_WARN("failed to get project physical operator");
+        return RC::INTERNAL;
+      }
+
+      rc = project_phy_oper->open(trx_);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to open project physical operator. rc=%s", strrc(rc));
+        return rc;
+      }
+
+      while (RC::SUCCESS == (rc = project_phy_oper->next())) {
+        Tuple *sub_tuple = project_phy_oper->current_tuple();
+        if (nullptr == sub_tuple) {
+          rc = RC::INTERNAL;
+          LOG_WARN("failed to get tuple from operator");
+          break;
+        }
+        
+        rc = sub_select_expr->get_value(*sub_tuple, left_value);
+        if (rc != RC::SUCCESS) {
+          break;
+        }
+
+        bool bool_value = false;
+
+        rc = compare_value(left_value, right_value, bool_value);
+
+        if(rc != RC::SUCCESS) {
+          LOG_WARN("failed to compare tuple cells. rc=%s", strrc(rc));
+          break;
+        }
+        
+        if (comp_ == CompOp::IN){
+          if(bool_value){
+            value.set_boolean(true);
+            break;
+          }
+        }
+        else if(comp_ == CompOp::NOT_IN){
+          if(bool_value){
+            value.set_boolean(false);
+            break;
+          }
+        }
+        else{
+          value.set_boolean(bool_value);
+          break;
+        }
+      }
+
+      if (rc == RC::SUCCESS || rc == RC::RECORD_EOF) {
+        rc = RC::SUCCESS;
+      }
+      project_phy_oper->close();
+    }
+    else{
+      rc = left_->get_value(tuple, left_value);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
+        return rc;
+      }
+
+      SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(right_.get());
+      PhysicalOperator *project_phy_oper = sub_select_expr->project_phy_oper();
+      if (project_phy_oper == nullptr) {
+        LOG_WARN("failed to get project physical operator");
+        return RC::INTERNAL;
+      }
+
+      rc = project_phy_oper->open(trx_);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to open project physical operator. rc=%s", strrc(rc));
+        return rc;
+      }
+
+      while (RC::SUCCESS == (rc = project_phy_oper->next())) {
+        Tuple *sub_tuple = project_phy_oper->current_tuple();
+        if (nullptr == sub_tuple) {
+          rc = RC::INTERNAL;
+          LOG_WARN("failed to get tuple from operator");
+          break;
+        }
+        
+        rc = sub_select_expr->get_value(*sub_tuple, right_value);
+        if (rc != RC::SUCCESS) {
+          break;
+        }
+
+        bool bool_value = false;
+
+        rc = compare_value(left_value, right_value, bool_value);
+
+        if(rc != RC::SUCCESS) {
+          LOG_WARN("failed to compare tuple cells. rc=%s", strrc(rc));
+          break;
+        }
+        
+        if (comp_ == CompOp::IN){
+          if(bool_value){
+            value.set_boolean(true);
+            break;
+          }
+        }
+        else if(comp_ == CompOp::NOT_IN){
+          if(bool_value){
+            value.set_boolean(false);
+            break;
+          }
+        }
+        else{
+          value.set_boolean(bool_value);
+          break;
+        }
+      }
+
+      if (rc == RC::SUCCESS || rc == RC::RECORD_EOF) {
+        rc = RC::SUCCESS;
+      }
+      project_phy_oper->close();
+    }
+  }
+  return rc;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 ConjunctionExpr::ConjunctionExpr(Type type, vector<unique_ptr<Expression>> &children)
     : conjunction_type_(type), children_(std::move(children))
@@ -289,6 +459,7 @@ RC ConjunctionExpr::get_value(const Tuple &tuple, Value &value) const
 
   Value tmp_value;
   for (const unique_ptr<Expression> &expr : children_) {
+    expr->set_trx(trx_);
     rc = expr->get_value(tuple, tmp_value);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to get value by child expression. rc=%s", strrc(rc));
@@ -819,3 +990,20 @@ RC VectorExpr::try_get_value(Value &value) const
   return calc_value(left_value, right_value, value);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief 子查询表达式
+ * @ingroup Expression
+ * @brief 子查询表达式
+ */
+
+AttrType SubSelectExpr::value_type() const
+{
+  Expression *expr = sub_select_->query_expressions().front().get();
+  return expr->value_type();
+}
+
+RC SubSelectExpr::get_value(const Tuple &tuple, Value &value) const
+{
+  return tuple.cell_at(0, value);
+}

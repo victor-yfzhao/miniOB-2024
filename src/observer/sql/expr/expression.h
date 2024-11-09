@@ -47,7 +47,9 @@ enum class ExprType
   CONJUNCTION,  ///< 多个表达式使用同一种关系(AND或OR)来联结
   ARITHMETIC,   ///< 算术运算
   AGGREGATION,  ///< 聚合运算
-  VECTOR_EXPR   ///< 向量表达式
+  VECTOR_EXPR,  ///< 向量表达式
+
+  SUB_SELECT,   ///< 子查询
 };
 
 /**
@@ -123,6 +125,11 @@ public:
    */
   virtual RC eval(Chunk &chunk, std::vector<uint8_t> &select) { return RC::UNIMPLEMENTED; }
 
+  /**
+   * @brief set Trx
+   */
+  virtual void set_trx(Trx *trx) { trx_ = trx; }
+
 protected:
   /**
    * @brief 表达式在下层算子返回的 chunk 中的位置
@@ -131,6 +138,8 @@ protected:
    * chunk 中 下标为 pos_ 的列中。
    */
   int pos_ = -1;
+
+  Trx *trx_ = nullptr;
 
 private:
   std::string name_;
@@ -309,6 +318,9 @@ public:
 
   template <typename T>
   RC compare_column(const Column &left, const Column &right, std::vector<uint8_t> &result) const;
+
+private:
+  RC get_value_when_have_sub_select(const Tuple &tuple, Value &value, bool left, bool have_cast) const;
 
 private:
   CompOp                      comp_;
@@ -510,4 +522,36 @@ class VectorExpr : public Expression
     Type                        vector_type_;
     std::unique_ptr<Expression> left_;
     std::unique_ptr<Expression> right_;
+};
+
+/**
+ * @brief 子查询表达式
+ * @ingroup Expression
+ */
+class SelectStmt;
+class LogicalOperator;
+class PhysicalOperator;
+class SubSelectExpr : public Expression
+{
+public:
+  SubSelectExpr() = default;
+  virtual ~SubSelectExpr();
+
+  RC set_stmt(SelectStmt *stmt) { sub_select_ = stmt; return RC::SUCCESS; };
+  RC set_project_oper(std::unique_ptr<LogicalOperator> &project_oper) { project_oper_ = std::move(project_oper);  return RC::SUCCESS; }
+  RC set_project_phy_oper(std::unique_ptr<PhysicalOperator> &project_phy_oper) { project_phy_oper_ = std::move(project_phy_oper);  return RC::SUCCESS; }
+
+  const SelectStmt *sub_select() const { return sub_select_; }
+  LogicalOperator *project_oper() { return project_oper_.get(); }
+  PhysicalOperator *project_phy_oper() { return project_phy_oper_.get(); }
+
+  ExprType type() const override { return ExprType::SUB_SELECT; }
+  AttrType value_type() const override;
+
+  RC get_value(const Tuple &tuple, Value &value) const override;
+
+private:
+  SelectStmt                       *sub_select_;
+  std::unique_ptr<LogicalOperator>  project_oper_;
+  std::unique_ptr<PhysicalOperator> project_phy_oper_;
 };
