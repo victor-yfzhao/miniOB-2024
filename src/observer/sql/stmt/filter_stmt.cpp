@@ -20,7 +20,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/table/table.h"
 #include "sql/parser/expression_binder.h"
 #include "sql/stmt/select_stmt.h"
-#include "sql/operator/physical_operator.h"
+
 
 FilterStmt::~FilterStmt()
 {
@@ -41,12 +41,11 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
 
     if(conditions[i].has_sub_select){
       SelectSqlNode *sub_select_node = conditions[i].sub_select;
-      auto expressions = std::move(sub_select_node->expressions);
-      if (expressions.size() != 1) {
+      if (sub_select_node->expressions.size() != 1) {
         LOG_WARN("sub select should have only one field");
         return RC::INVALID_ARGUMENT;
       }
-      if (expressions[0]->type() != ExprType::UNBOUND_FIELD && expressions[0]->type() != ExprType::UNBOUND_AGGREGATION) {
+      if (sub_select_node->expressions[0]->type() != ExprType::UNBOUND_FIELD && sub_select_node->expressions[0]->type() != ExprType::UNBOUND_AGGREGATION) {
         LOG_WARN("sub select field should be a field");
         return RC::INVALID_ARGUMENT;
       }
@@ -109,12 +108,18 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
 
   vector<unique_ptr<Expression>> filter_expressions;
 
-  unique_ptr<Expression> left_expression(condition.left_expr);
-  expression_binder.bind_expression(left_expression, filter_expressions);
-  if (0 == condition.has_sub_select){
-  unique_ptr<Expression> right_expression(condition.right_expr);
-  expression_binder.bind_expression(right_expression, filter_expressions);
+  //unique_ptr<Expression> left_expression(condition.left_expr);
+  //unique_ptr<Expression> right_expression(condition.right_expr);
+
+  if(1 != condition.has_sub_select){
+    unique_ptr<Expression> left_expression(condition.left_expr);
+    expression_binder.bind_expression(left_expression, filter_expressions);
   }
+  if (2 != condition.has_sub_select){
+    unique_ptr<Expression> right_expression(condition.right_expr);
+    expression_binder.bind_expression(right_expression, filter_expressions);
+  }
+
   filter_unit = new FilterUnit;
   if(condition.left_is_attr == 1){
     Table           *table = nullptr;
@@ -151,12 +156,13 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     if (rc_tmp != RC::SUCCESS) {
       return rc_tmp;
     }
-    std::unique_ptr<LogicalOperator> project_oper;
-    std::unique_ptr<PhysicalOperator> project_phy_oper;
-    std::unique_ptr<SubSelectExpr> sub_select_expr(new SubSelectExpr(static_cast<SelectStmt *>(sub_select_stmt),
-    std::move(project_oper),std::move(project_phy_oper)));
-    sub_select_expr->set_stmt(static_cast<SelectStmt *>(sub_select_stmt));
-    std::unique_ptr<Expression> left_expr = std::move(sub_select_expr);
+    // std::unique_ptr<LogicalOperator> project_oper;
+    // std::unique_ptr<PhysicalOperator> project_phy_oper;
+    std::unique_ptr<Expression> left_expr(new SubSelectExpr());
+    SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(left_expr.get());
+    std::shared_ptr<SelectStmt> sub_select_stmt_shared(static_cast<SelectStmt *>(sub_select_stmt));
+    sub_select_expr->set_stmt(sub_select_stmt_shared);
+
     filter_obj.init_expr(left_expr);
     filter_unit->set_left(filter_obj);
   }
@@ -170,28 +176,6 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     filter_obj.init_expr(left_expr);
     filter_unit->set_left(filter_obj);
   }
-
-  // if (condition.left_is_attr) {
-  //   Table           *table = nullptr;
-  //   const FieldMeta *field = nullptr;
-  //   rc                     = get_table_and_field(db, default_table, tables, condition.left_attr, table, field);
-  //   if (rc != RC::SUCCESS) {
-  //     LOG_WARN("cannot find attr");
-  //     return rc;
-  //   }
-  //   FilterObj filter_obj;
-  //   filter_obj.init_attr(Field(table, field));
-  //   filter_unit->set_left(filter_obj);
-  // }else if(condition.left_is_expr){
-  //   FilterObj filter_obj;
-  //   filter_obj.init_expr(condition.left_expr);
-  //   filter_unit->set_left(filter_obj);
-  // }
-  // else {
-  //   FilterObj filter_obj;
-  //   filter_obj.init_value(condition.left_value);
-  //   filter_unit->set_left(filter_obj);
-  // }
 
   if(1 == condition.right_is_attr){
     Table           *table = nullptr;
@@ -227,12 +211,13 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     if(rc_tmp != RC::SUCCESS){
       return rc_tmp;
     }
-    std::unique_ptr<LogicalOperator> project_oper;
-    std::unique_ptr<PhysicalOperator> project_phy_oper;
-    std::unique_ptr<SubSelectExpr> sub_select_expr(new SubSelectExpr(static_cast<SelectStmt *>(sub_select_stmt),
-    std::move(project_oper),std::move(project_phy_oper)));
-    sub_select_expr->set_stmt(static_cast<SelectStmt *>(sub_select_stmt));
-    std::unique_ptr<Expression> right_expr = std::move(sub_select_expr);
+    // std::unique_ptr<LogicalOperator> project_oper;
+    // std::unique_ptr<PhysicalOperator> project_phy_oper;
+    std::unique_ptr<Expression> right_expr(new SubSelectExpr());
+    SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(right_expr.get());
+    std::shared_ptr<SelectStmt> sub_select_stmt_shared(static_cast<SelectStmt *>(sub_select_stmt));
+    sub_select_expr->set_stmt(sub_select_stmt_shared);
+    
     filter_obj.init_expr(right_expr);
     filter_unit->set_right(filter_obj);
   }
@@ -244,26 +229,6 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     filter_obj.init_expr(right_expr);
     filter_unit->set_right(filter_obj);
   }
-  // if (condition.right_is_attr) {
-  //   Table           *table = nullptr;
-  //   const FieldMeta *field = nullptr;
-  //   rc                     = get_table_and_field(db, default_table, tables, condition.right_attr, table, field);
-  //   if (rc != RC::SUCCESS) {
-  //     LOG_WARN("cannot find attr");
-  //     return rc;
-  //   }
-  //   FilterObj filter_obj;
-  //   filter_obj.init_attr(Field(table, field));
-  //   filter_unit->set_right(filter_obj);
-  // } else if(condition.right_is_expr){
-  //   FilterObj filter_obj;
-  //   filter_obj.init_expr(condition.right_expr);
-  //   filter_unit->set_right(filter_obj);
-  // } else {
-  //   FilterObj filter_obj;
-  //   filter_obj.init_value(condition.right_value);
-  //   filter_unit->set_right(filter_obj);
-  // }
 
   filter_unit->set_comp(comp);
 

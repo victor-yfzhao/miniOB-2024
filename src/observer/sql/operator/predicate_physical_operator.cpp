@@ -30,8 +30,25 @@ RC PredicatePhysicalOperator::open(Trx *trx)
     return RC::INTERNAL;
   }
 
-  Expression *expr = expression_.get();
+  auto *expr = dynamic_cast<ConjunctionExpr *>(expression_.get());
   if (nullptr != expr) expr->set_trx(trx);
+  for (auto &child : expr->children()) {
+    if (child->type() == ExprType::COMPARISON) {
+      ComparisonExpr *comp_expr = static_cast<ComparisonExpr *>(child.get());
+      if (comp_expr->left()->type() == ExprType::SUB_SELECT) {
+        SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->left().get());
+        if (sub_select_expr->project_phy_oper()->open(trx) != RC::SUCCESS) {
+          return RC::INTERNAL;
+        }
+      }
+      if (comp_expr->right()->type() == ExprType::SUB_SELECT) {
+        SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->right().get());
+        if (sub_select_expr->project_phy_oper()->open(trx) != RC::SUCCESS) {
+          return RC::INTERNAL;
+        }
+      }
+    }
+  }
 
   return children_[0]->open(trx);
 }
@@ -64,6 +81,21 @@ RC PredicatePhysicalOperator::next()
 
 RC PredicatePhysicalOperator::close()
 {
+  auto conj_expr = dynamic_cast<ConjunctionExpr *>(expression_.get());
+  for (auto &expr : conj_expr->children()) {
+    if (expr->type() == ExprType::COMPARISON) {
+      ComparisonExpr *comp_expr = static_cast<ComparisonExpr *>(expr.get());
+      if (comp_expr->left()->type() == ExprType::SUB_SELECT) {
+        SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->left().get());
+        sub_select_expr->project_phy_oper()->close();
+      }
+      if (comp_expr->right()->type() == ExprType::SUB_SELECT) {
+        SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->right().get());
+        sub_select_expr->project_phy_oper()->close();
+      }
+    }
+  }
+
   children_[0]->close();
   return RC::SUCCESS;
 }

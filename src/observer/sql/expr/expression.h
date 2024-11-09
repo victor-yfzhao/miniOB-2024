@@ -536,14 +536,14 @@ class SubSelectExpr : public Expression
 {
 public:
   SubSelectExpr() = default;
-  SubSelectExpr(SelectStmt * sub_select , std::unique_ptr<LogicalOperator>  project_oper, std::unique_ptr<PhysicalOperator> project_phy_oper) ;
-  virtual ~SubSelectExpr();
+  SubSelectExpr(SelectStmt * sub_select , std::shared_ptr<LogicalOperator>  project_oper, std::shared_ptr<PhysicalOperator> project_phy_oper) ;
+  virtual ~SubSelectExpr() = default;
 
-  RC set_stmt(SelectStmt *stmt) { sub_select_ = stmt; return RC::SUCCESS; };
-  RC set_project_oper(std::unique_ptr<LogicalOperator> &project_oper);
-  RC set_project_phy_oper(std::unique_ptr<PhysicalOperator> &project_phy_oper);
+  RC set_stmt(std::shared_ptr<SelectStmt> &stmt) { sub_select_ = std::move(stmt); return RC::SUCCESS; };
+  RC set_project_oper(std::shared_ptr<LogicalOperator> &project_oper);
+  RC set_project_phy_oper(std::shared_ptr<PhysicalOperator> &project_phy_oper);
 
-  const SelectStmt *sub_select() const { return sub_select_; }
+  const SelectStmt *sub_select() const { return sub_select_.get(); }
   LogicalOperator *project_oper() { return project_oper_.get(); }
   PhysicalOperator *project_phy_oper() { return project_phy_oper_.get(); }
 
@@ -553,7 +553,7 @@ public:
   RC get_value(const Tuple &tuple, Value &value) const override;
 
 private:
-  SelectStmt                       *sub_select_;
-  std::unique_ptr<LogicalOperator>  project_oper_;
-  std::unique_ptr<PhysicalOperator> project_phy_oper_;
+  std::shared_ptr<SelectStmt>       sub_select_;
+  std::shared_ptr<LogicalOperator>  project_oper_;
+  std::shared_ptr<PhysicalOperator> project_phy_oper_;
 };
