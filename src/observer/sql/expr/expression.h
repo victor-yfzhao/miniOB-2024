@@ -22,6 +22,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/expr/aggregator.h"
 #include "storage/common/chunk.h"
 
+
 class Tuple;
 
 /**
@@ -535,11 +536,12 @@ class SubSelectExpr : public Expression
 {
 public:
   SubSelectExpr() = default;
+  SubSelectExpr(SelectStmt * sub_select , std::unique_ptr<LogicalOperator>  project_oper, std::unique_ptr<PhysicalOperator> project_phy_oper) ;
   virtual ~SubSelectExpr();
 
   RC set_stmt(SelectStmt *stmt) { sub_select_ = stmt; return RC::SUCCESS; };
-  RC set_project_oper(std::unique_ptr<LogicalOperator> &project_oper) { project_oper_ = std::move(project_oper);  return RC::SUCCESS; }
-  RC set_project_phy_oper(std::unique_ptr<PhysicalOperator> &project_phy_oper) { project_phy_oper_ = std::move(project_phy_oper);  return RC::SUCCESS; }
+  RC set_project_oper(std::unique_ptr<LogicalOperator> &project_oper);
+  RC set_project_phy_oper(std::unique_ptr<PhysicalOperator> &project_phy_oper);
 
   const SelectStmt *sub_select() const { return sub_select_; }
   LogicalOperator *project_oper() { return project_oper_.get(); }

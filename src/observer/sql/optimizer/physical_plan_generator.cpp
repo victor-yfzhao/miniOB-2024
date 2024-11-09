@@ -216,7 +216,7 @@ RC PhysicalPlanGenerator::create_plan(PredicateLogicalOperator &pred_oper, uniqu
   ASSERT(expressions.size() == 1, "predicate logical operator's children should be 1");
 
   ConjunctionExpr *expr = (ConjunctionExpr*)expressions.front().get();
-  std::vector<std::unique_ptr<Expression>> cmp_exprs = expr->children();
+  std::vector<std::unique_ptr<Expression>> cmp_exprs = std::move(expr->children());
 
   for (auto &cmp_expr : cmp_exprs) {
     if (cmp_expr->type() == ExprType::COMPARISON) {

@@ -20,6 +20,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/table/table.h"
 #include "sql/parser/expression_binder.h"
 #include "sql/stmt/select_stmt.h"
+#include "sql/operator/physical_operator.h"
 
 FilterStmt::~FilterStmt()
 {
@@ -40,7 +41,7 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
 
     if(conditions[i].has_sub_select){
       SelectSqlNode *sub_select_node = conditions[i].sub_select;
-      auto expressions = sub_select_node->expressions;
+      auto expressions = std::move(sub_select_node->expressions);
       if (expressions.size() != 1) {
         LOG_WARN("sub select should have only one field");
         return RC::INVALID_ARGUMENT;
@@ -110,10 +111,10 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
 
   unique_ptr<Expression> left_expression(condition.left_expr);
   expression_binder.bind_expression(left_expression, filter_expressions);
-
+  if (0 == condition.has_sub_select){
   unique_ptr<Expression> right_expression(condition.right_expr);
   expression_binder.bind_expression(right_expression, filter_expressions);
-
+  }
   filter_unit = new FilterUnit;
   if(condition.left_is_attr == 1){
     Table           *table = nullptr;
@@ -150,7 +151,10 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     if (rc_tmp != RC::SUCCESS) {
       return rc_tmp;
     }
-    std::unique_ptr<SubSelectExpr> sub_select_expr = std::make_unique<SubSelectExpr>();
+    std::unique_ptr<LogicalOperator> project_oper;
+    std::unique_ptr<PhysicalOperator> project_phy_oper;
+    std::unique_ptr<SubSelectExpr> sub_select_expr(new SubSelectExpr(static_cast<SelectStmt *>(sub_select_stmt),
+    std::move(project_oper),std::move(project_phy_oper)));
     sub_select_expr->set_stmt(static_cast<SelectStmt *>(sub_select_stmt));
     std::unique_ptr<Expression> left_expr = std::move(sub_select_expr);
     filter_obj.init_expr(left_expr);
@@ -223,7 +227,10 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     if(rc_tmp != RC::SUCCESS){
       return rc_tmp;
     }
-    std::unique_ptr<SubSelectExpr> sub_select_expr = std::make_unique<SubSelectExpr>();
+    std::unique_ptr<LogicalOperator> project_oper;
+    std::unique_ptr<PhysicalOperator> project_phy_oper;
+    std::unique_ptr<SubSelectExpr> sub_select_expr(new SubSelectExpr(static_cast<SelectStmt *>(sub_select_stmt),
+    std::move(project_oper),std::move(project_phy_oper)));
     sub_select_expr->set_stmt(static_cast<SelectStmt *>(sub_select_stmt));
     std::unique_ptr<Expression> right_expr = std::move(sub_select_expr);
     filter_obj.init_expr(right_expr);

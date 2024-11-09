@@ -996,7 +996,10 @@ RC VectorExpr::try_get_value(Value &value) const
  * @ingroup Expression
  * @brief 子查询表达式
  */
-
+SubSelectExpr::SubSelectExpr(SelectStmt * sub_select , std::unique_ptr<LogicalOperator> project_oper,
+ std::unique_ptr<PhysicalOperator> project_phy_oper)
+    : sub_select_(sub_select), project_oper_(std::move(project_oper)),project_phy_oper_(std::move(project_phy_oper))
+{}
 AttrType SubSelectExpr::value_type() const
 {
   Expression *expr = sub_select_->query_expressions().front().get();
@@ -1006,4 +1009,14 @@ AttrType SubSelectExpr::value_type() const
 RC SubSelectExpr::get_value(const Tuple &tuple, Value &value) const
 {
   return tuple.cell_at(0, value);
+}
+
+RC SubSelectExpr::set_project_oper(std::unique_ptr<LogicalOperator> &project_oper){
+  this->project_oper_ = std::move(project_oper);
+  return RC::SUCCESS;
+}
+
+RC SubSelectExpr::set_project_phy_oper(std::unique_ptr<PhysicalOperator> &project_phy_oper){
+  this->project_phy_oper_ = std::move(project_phy_oper);
+  return RC::SUCCESS;
 }
