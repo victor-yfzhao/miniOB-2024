@@ -225,28 +225,32 @@ RC PhysicalPlanGenerator::create_plan(PredicateLogicalOperator &pred_oper, uniqu
 
       if (left_expr->type() == ExprType::SUB_SELECT){
         SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(left_expr);
-        LogicalOperator *sub_select_oper = sub_select_expr->project_oper();
-        unique_ptr<PhysicalOperator> sub_select_phy_oper;
-        rc = create(*sub_select_oper, sub_select_phy_oper);
-        if (rc != RC::SUCCESS) {
-          LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
-          return rc;
+        if (sub_select_expr->sub_select_result().empty()){
+          LogicalOperator *sub_select_oper = sub_select_expr->project_oper();
+          unique_ptr<PhysicalOperator> sub_select_phy_oper;
+          rc = create(*sub_select_oper, sub_select_phy_oper);
+          if (rc != RC::SUCCESS) {
+            LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
+            return rc;
+          }
+          shared_ptr<PhysicalOperator> sub_select_expr_oper(sub_select_phy_oper.release());
+          sub_select_expr->set_project_phy_oper(sub_select_expr_oper);
         }
-        shared_ptr<PhysicalOperator> sub_select_expr_oper(sub_select_phy_oper.release());
-        sub_select_expr->set_project_phy_oper(sub_select_expr_oper);
       }
 
       if (right_expr->type() == ExprType::SUB_SELECT){
         SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(right_expr);
-        LogicalOperator *sub_select_oper = sub_select_expr->project_oper();
-        unique_ptr<PhysicalOperator> sub_select_phy_oper;
-        rc = create(*sub_select_oper, sub_select_phy_oper);
-        if (rc != RC::SUCCESS) {
-          LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
-          return rc;
+        if (sub_select_expr->sub_select_result().empty()){
+          LogicalOperator *sub_select_oper = sub_select_expr->project_oper();
+          unique_ptr<PhysicalOperator> sub_select_phy_oper;
+          rc = create(*sub_select_oper, sub_select_phy_oper);
+          if (rc != RC::SUCCESS) {
+            LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
+            return rc;
+          }
+          shared_ptr<PhysicalOperator> sub_select_expr_oper(sub_select_phy_oper.release());
+          sub_select_expr->set_project_phy_oper(sub_select_expr_oper);
         }
-        shared_ptr<PhysicalOperator> sub_select_expr_oper(sub_select_phy_oper.release());
-        sub_select_expr->set_project_phy_oper(sub_select_expr_oper);
       }
     }
   }

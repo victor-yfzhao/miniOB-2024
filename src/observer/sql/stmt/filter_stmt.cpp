@@ -39,7 +39,7 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
   FilterStmt *tmp_stmt = new FilterStmt();
   for (int i = 0; i < condition_num; i++) {
 
-    if(conditions[i].has_sub_select){
+    if(conditions[i].has_sub_select && conditions[i].right_is_const != 1){
       SelectSqlNode *sub_select_node = conditions[i].sub_select;
       if (sub_select_node->expressions.size() != 1) {
         LOG_WARN("sub select should have only one field");
@@ -209,6 +209,15 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     filter_obj.init_value(right_cell);
     filter_unit->set_right(filter_obj);
   } 
+  else if (1 == condition.right_is_const) {
+    FilterObj filter_obj;
+    std::unique_ptr<Expression> right_expr(new SubSelectExpr());
+    SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(right_expr.get());
+    sub_select_expr->set_sub_select_result(condition.values);
+
+    filter_obj.init_expr(right_expr);
+    filter_unit->set_right(filter_obj);
+  }
   else if (2 == condition.has_sub_select) {
     FilterObj filter_obj;
     Stmt *sub_select_stmt;

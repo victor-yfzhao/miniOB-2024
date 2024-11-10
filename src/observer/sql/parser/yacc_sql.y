@@ -699,10 +699,10 @@ expression:
     | expression '/' expression {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::DIV, $1, $3, sql_string, &@$);
     }
-    | LBRACE expression RBRACE {
+    /* | LBRACE expression RBRACE {
       $$ = $2;
       $$->set_name(token_name(sql_string, &@$));
-    }
+    } */
     | '-' expression %prec UMINUS {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $2, nullptr, sql_string, &@$);
     }
@@ -841,7 +841,7 @@ condition_list:
     }
     ;
 condition:
-    expression comp_op LBRACE select_stmt RBRACE {
+     expression comp_op LBRACE select_stmt RBRACE {
       $$ = new ConditionSqlNode;
       if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
       if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
@@ -850,8 +850,10 @@ condition:
       $$->has_sub_select = 2;
       $$->sub_select = &$4->selection;
       $$->comp = $2;
-    }
-    | LBRACE select_stmt RBRACE comp_op expression {
+    } 
+    
+    | 
+    LBRACE select_stmt RBRACE comp_op expression { 
       $$ = new ConditionSqlNode;
       $$->left_is_attr = 0;
       $$->has_sub_select = 1;
@@ -861,6 +863,39 @@ condition:
       $$->right_expr=$5;
       $$->comp = $4;
     } 
+    // const value
+    | expression comp_op LBRACE value value_list RBRACE {
+      $$ = new ConditionSqlNode;
+      if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
+      if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
+      $$->left_expr=$1;
+      $$->right_is_attr = 0;
+      $$->has_sub_select = 2;
+      $$->right_is_const = 1;
+      // 
+      if ($5 != nullptr) {
+        $$->values.swap(*$5);
+        delete $5;
+      }
+      $$->values.emplace_back(*$4);
+      $$->comp = $2;
+    } 
+    /* | expression NOT IN_SQL LBRACE value value_list RBRACE {
+      $$ = new ConditionSqlNode;
+      if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
+      if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
+      $$->left_expr=$1;
+      $$->right_is_attr = 0;
+      $$->has_sub_select = 2;
+      $$->right_is_const = 1;
+      // 
+      if ($6 != nullptr) {
+        $$->values.swap(*$6);
+        delete $6;
+      }
+      $$->values.emplace_back(*$5);
+      $$->comp = NOT_IN;
+    } */
     | expression comp_op expression {
       $$ = new ConditionSqlNode;
       if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}

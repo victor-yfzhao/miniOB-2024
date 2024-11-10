@@ -1126,8 +1126,13 @@ SubSelectExpr::SubSelectExpr(SelectStmt * sub_select , std::shared_ptr<LogicalOp
 {}
 AttrType SubSelectExpr::value_type() const
 {
-  Expression *expr = sub_select_->query_expressions().front().get();
-  return expr->value_type();
+  if (sub_select_result_.empty()) {
+    Expression *expr = sub_select_->query_expressions().front().get();
+    return expr->value_type();
+  }
+  else{
+    return sub_select_result_[0].attr_type();
+  }
 }
 
 RC SubSelectExpr::get_value(const Tuple &tuple, Value &value) const
@@ -1174,4 +1179,9 @@ RC SubSelectExpr::set_sub_select_result(){
   project_phy_oper_->close();
 
   return rc;
+}
+
+RC SubSelectExpr::set_sub_select_result(const std::vector<Value> &sub_select_result){
+  this->sub_select_result_ = sub_select_result;
+  return RC::SUCCESS;
 }

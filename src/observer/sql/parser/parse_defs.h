@@ -74,6 +74,11 @@ struct ConditionSqlNode
   Expression*   left_expr;
   Expression*   right_expr;
   SelectSqlNode* sub_select;
+
+  //to do const value
+  int right_is_const = 0;
+  std::vector<Value> values;
+
   int has_sub_select;           ///< 0: no sub-select, 1: left part is sub-select, 2: right part is sub-select
   int left_is_expr;
   int right_is_expr;

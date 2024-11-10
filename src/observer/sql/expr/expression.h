@@ -555,6 +555,7 @@ public:
   RC get_value(int index, Value &value) const;
 
   RC set_sub_select_result();
+  RC set_sub_select_result(const std::vector<Value> &result);
 
 private:
   std::shared_ptr<SelectStmt>       sub_select_;

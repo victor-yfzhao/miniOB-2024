@@ -51,17 +51,19 @@ RC PredicatePhysicalOperator::open(Trx *trx)
       }
       if (comp_expr->right()->type() == ExprType::SUB_SELECT) {
         SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->right().get());
-        RC rc = sub_select_expr->set_sub_select_result();
-        if (rc != RC::SUCCESS) {
-          return rc;
-        }
-        auto values = sub_select_expr->sub_select_result();
-        if(comp_expr->comp() != CompOp::IN && comp_expr->comp() != CompOp::NOT_IN){
-          if(values.size() != 1){
-            LOG_WARN("sub select should have only one field");
-            return RC::INVALID_ARGUMENT;
+        if(sub_select_expr->sub_select_result().empty()){
+          RC rc = sub_select_expr->set_sub_select_result();
+          if (rc != RC::SUCCESS) {
+            return rc;
           }
         }
+        auto values = sub_select_expr->sub_select_result();
+          if(comp_expr->comp() != CompOp::IN && comp_expr->comp() != CompOp::NOT_IN){
+            if(values.size() > 1){
+              LOG_WARN("sub select should have only one field");
+              return RC::INVALID_ARGUMENT;
+            }
+          }
       }
     }
   }

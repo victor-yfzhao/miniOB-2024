@@ -225,28 +225,32 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
 
     if (filter_obj_left.is_expr && left->type() == ExprType::SUB_SELECT){
       auto sub_select_expr = static_cast<SubSelectExpr *>(left.get());
-      auto sub_select_stmt = (Stmt*)sub_select_expr->sub_select();
-      unique_ptr<LogicalOperator> sub_select_oper;
-      rc = create(sub_select_stmt, sub_select_oper);
-      if (rc != RC::SUCCESS) {
-        LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
-        return rc;
+      if (sub_select_expr->sub_select_result().empty()){
+        auto sub_select_stmt = (Stmt*)sub_select_expr->sub_select();
+        unique_ptr<LogicalOperator> sub_select_oper;
+        rc = create(sub_select_stmt, sub_select_oper);
+        if (rc != RC::SUCCESS) {
+          LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
+          return rc;
+        }
+        std::shared_ptr<LogicalOperator> sub_select_oper_shared(sub_select_oper.release());
+        sub_select_expr->set_project_oper(sub_select_oper_shared);
       }
-      std::shared_ptr<LogicalOperator> sub_select_oper_shared(sub_select_oper.release());
-      sub_select_expr->set_project_oper(sub_select_oper_shared);
     }
 
     if (filter_obj_right.is_expr && right->type() == ExprType::SUB_SELECT){
       auto sub_select_expr = static_cast<SubSelectExpr *>(right.get());
-      auto sub_select_stmt = (Stmt*)sub_select_expr->sub_select();
-      unique_ptr<LogicalOperator> sub_select_oper;
-      rc = create(sub_select_stmt, sub_select_oper);
-      if (rc != RC::SUCCESS) {
-        LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
-        return rc;
+      if (sub_select_expr->sub_select_result().empty()){
+        auto sub_select_stmt = (Stmt*)sub_select_expr->sub_select();
+        unique_ptr<LogicalOperator> sub_select_oper;
+        rc = create(sub_select_stmt, sub_select_oper);
+        if (rc != RC::SUCCESS) {
+          LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
+          return rc;
+        }
+        std::shared_ptr<LogicalOperator> sub_select_oper_shared(sub_select_oper.release());
+        sub_select_expr->set_project_oper(sub_select_oper_shared);
       }
-      std::shared_ptr<LogicalOperator> sub_select_oper_shared(sub_select_oper.release());
-      sub_select_expr->set_project_oper(sub_select_oper_shared);
     }
 
     ComparisonExpr *cmp_expr = new ComparisonExpr(filter_unit->comp(), std::move(left), std::move(right));
