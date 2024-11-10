@@ -546,14 +546,19 @@ public:
   const SelectStmt *sub_select() const { return sub_select_.get(); }
   LogicalOperator *project_oper() { return project_oper_.get(); }
   PhysicalOperator *project_phy_oper() { return project_phy_oper_.get(); }
+  std::vector<Value> &sub_select_result() { return sub_select_result_; }
 
   ExprType type() const override { return ExprType::SUB_SELECT; }
   AttrType value_type() const override;
 
   RC get_value(const Tuple &tuple, Value &value) const override;
+  RC get_value(int index, Value &value) const;
+
+  RC set_sub_select_result();
 
 private:
   std::shared_ptr<SelectStmt>       sub_select_;
   std::shared_ptr<LogicalOperator>  project_oper_;
   std::shared_ptr<PhysicalOperator> project_phy_oper_;
+  std::vector<Value>                sub_select_result_;
 };

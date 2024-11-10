@@ -209,24 +209,148 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const
   Value right_value;
 
   if (left_->type() == ExprType::SUB_SELECT) {
-    return get_value_when_have_sub_select(tuple, value, true, false);
+    auto left_values = ((SubSelectExpr*)left_.get())->sub_select_result();
+    RC rc = right_->get_value(tuple, right_value);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to get value of right expression. rc=%s", strrc(rc));
+      return rc;
+    }
+
+    switch (comp_) {
+      case IN:{
+        for(auto &_left_value : left_values){
+          bool bool_value = false;
+          rc = compare_value(_left_value, right_value, bool_value);
+          if (rc == RC::SUCCESS && bool_value) {
+            value.set_boolean(true);
+            return rc;
+          }
+
+          if (rc != RC::SUCCESS) {
+            LOG_WARN("failed to compare tuple cells. rc=%s", strrc(rc));
+            return rc;
+          }
+        }
+        value.set_boolean(false);
+        return rc;
+      }break;
+      case NOT_IN:{
+        for(auto &_left_value : left_values){
+          bool bool_value = false;
+          rc = compare_value(_left_value, right_value, bool_value);
+          if (rc == RC::SUCCESS && bool_value) {
+            value.set_boolean(false);
+            return rc;
+          }
+
+          if (rc != RC::SUCCESS) {
+            LOG_WARN("failed to compare tuple cells. rc=%s", strrc(rc));
+            return rc;
+          }
+        }
+        value.set_boolean(true);
+        return rc;
+      }break;
+      default:{
+        if (left_values.size() == 0){
+          value.set_boolean(false);
+          return rc;
+        }
+        if (left_values.size() == 1){
+          bool bool_value = false;
+          rc = compare_value(left_values[0], right_value, bool_value);
+          if (rc == RC::SUCCESS) {
+            value.set_boolean(bool_value);
+            return rc;
+          }
+          return rc;
+        }
+        else{
+          rc = RC::UNIMPLEMENTED;
+          return rc;
+        }
+      }
+    }
   }
 
   if (right_->type() == ExprType::SUB_SELECT) {
-    return get_value_when_have_sub_select(tuple, value, false, false);
+    auto right_values = ((SubSelectExpr*)right_.get())->sub_select_result();
+    RC rc = left_->get_value(tuple, left_value);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
+      return rc;
+    }
+
+    switch (comp_) {
+      case IN:{
+        for(auto &_right_value : right_values){
+          bool bool_value = false;
+          rc = compare_value(left_value, _right_value, bool_value);
+          if (rc == RC::SUCCESS && bool_value) {
+            value.set_boolean(true);
+            return rc;
+          }
+
+          if (rc != RC::SUCCESS) {
+            LOG_WARN("failed to compare tuple cells. rc=%s", strrc(rc));
+            return rc;
+          }
+        }
+        value.set_boolean(false);
+        return rc;
+      }break;
+      case NOT_IN:{
+        for(auto &_right_value : right_values){
+          bool bool_value = false;
+          rc = compare_value(left_value, _right_value, bool_value);
+          if (rc == RC::SUCCESS && bool_value) {
+            value.set_boolean(false);
+            return rc;
+          }
+
+          if (rc != RC::SUCCESS) {
+            LOG_WARN("failed to compare tuple cells. rc=%s", strrc(rc));
+            return rc;
+          }
+        }
+        value.set_boolean(true);
+        return rc;
+      }break;
+      default:{
+        if (right_values.size() == 0){
+          value.set_boolean(false);
+          return rc;
+        }
+        if (right_values.size() == 1){
+          bool bool_value = false;
+          rc = compare_value(left_value, right_values[0], bool_value);
+          if (rc == RC::SUCCESS) {
+            value.set_boolean(bool_value);
+            return rc;
+          }
+          return rc;
+        }
+        else{
+          rc = RC::UNIMPLEMENTED;
+          return rc;
+        }
+      }
+    }
   }
 
   if (left_->type() == ExprType::CAST) {
     CastExpr *cast_expr = static_cast<CastExpr *>(left_.get());
     if (cast_expr->child()->type() == ExprType::SUB_SELECT){
-      return get_value_when_have_sub_select(tuple, value, true, true);
+      //return get_value_when_have_sub_select(tuple, value, true, true);
+      return RC::UNIMPLEMENTED;
     }
   }
 
   if (right_->type() == ExprType::CAST) {
     CastExpr *cast_expr = static_cast<CastExpr *>(right_.get());
     if (cast_expr->child()->type() == ExprType::SUB_SELECT){
-      return get_value_when_have_sub_select(tuple, value, false, true);
+      //return get_value_when_have_sub_select(tuple, value, false, true);
+      return RC::UNIMPLEMENTED;
     }
   }
 
@@ -1019,4 +1143,35 @@ RC SubSelectExpr::set_project_oper(std::shared_ptr<LogicalOperator> &project_ope
 RC SubSelectExpr::set_project_phy_oper(std::shared_ptr<PhysicalOperator> &project_phy_oper){
   this->project_phy_oper_ = std::move(project_phy_oper);
   return RC::SUCCESS;
+}
+
+RC SubSelectExpr::get_value(int index, Value &value) const
+{
+  value = sub_select_result_[index];
+  return RC::SUCCESS;
+}
+
+RC SubSelectExpr::set_sub_select_result(){
+  this->project_phy_oper_->open(trx_);
+  RC rc = RC::SUCCESS;
+  while (RC::SUCCESS == (rc = project_phy_oper_->next())) {
+    Tuple *sub_tuple = project_phy_oper_->current_tuple();
+    if (nullptr == sub_tuple) {
+      rc = RC::INTERNAL;
+      LOG_WARN("failed to get tuple from operator");
+      break;
+    }
+    Value cell_value;
+    rc = this->get_value(*sub_tuple, cell_value);
+    if (rc != RC::SUCCESS) {
+      break;
+    }
+    sub_select_result_.push_back(cell_value);
+  }
+  if (rc == RC::SUCCESS || rc == RC::RECORD_EOF) {
+    rc = RC::SUCCESS;
+  }
+  project_phy_oper_->close();
+
+  return rc;
 }

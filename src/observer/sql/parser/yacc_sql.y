@@ -870,6 +870,7 @@ condition:
       if($3->type()==ExprType::VALUE){$$->right_is_val = 1;}
       $$->right_expr=$3;
       $$->comp = $2;
+      $$->has_sub_select = 0;
     }
     | rel_attr IS NULL_T
     {
@@ -879,6 +880,7 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
     }
@@ -890,6 +892,7 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NOT_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
     }
@@ -901,6 +904,7 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
     }
@@ -912,6 +916,7 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NOT_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
     }

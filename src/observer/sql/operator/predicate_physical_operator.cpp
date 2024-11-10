@@ -37,14 +37,30 @@ RC PredicatePhysicalOperator::open(Trx *trx)
       ComparisonExpr *comp_expr = static_cast<ComparisonExpr *>(child.get());
       if (comp_expr->left()->type() == ExprType::SUB_SELECT) {
         SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->left().get());
-        if (sub_select_expr->project_phy_oper()->open(trx) != RC::SUCCESS) {
-          return RC::INTERNAL;
+        RC rc = sub_select_expr->set_sub_select_result();
+        if (rc != RC::SUCCESS) {
+          return rc;
+        }
+        auto values = sub_select_expr->sub_select_result();
+        if(comp_expr->comp() != CompOp::IN && comp_expr->comp() != CompOp::NOT_IN){
+          if(values.size() != 1){
+            LOG_WARN("sub select should have only one field");
+            return RC::INVALID_ARGUMENT;
+          }
         }
       }
       if (comp_expr->right()->type() == ExprType::SUB_SELECT) {
         SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->right().get());
-        if (sub_select_expr->project_phy_oper()->open(trx) != RC::SUCCESS) {
-          return RC::INTERNAL;
+        RC rc = sub_select_expr->set_sub_select_result();
+        if (rc != RC::SUCCESS) {
+          return rc;
+        }
+        auto values = sub_select_expr->sub_select_result();
+        if(comp_expr->comp() != CompOp::IN && comp_expr->comp() != CompOp::NOT_IN){
+          if(values.size() != 1){
+            LOG_WARN("sub select should have only one field");
+            return RC::INVALID_ARGUMENT;
+          }
         }
       }
     }
@@ -81,20 +97,20 @@ RC PredicatePhysicalOperator::next()
 
 RC PredicatePhysicalOperator::close()
 {
-  auto conj_expr = dynamic_cast<ConjunctionExpr *>(expression_.get());
-  for (auto &expr : conj_expr->children()) {
-    if (expr->type() == ExprType::COMPARISON) {
-      ComparisonExpr *comp_expr = static_cast<ComparisonExpr *>(expr.get());
-      if (comp_expr->left()->type() == ExprType::SUB_SELECT) {
-        SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->left().get());
-        sub_select_expr->project_phy_oper()->close();
-      }
-      if (comp_expr->right()->type() == ExprType::SUB_SELECT) {
-        SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->right().get());
-        sub_select_expr->project_phy_oper()->close();
-      }
-    }
-  }
+  // auto conj_expr = dynamic_cast<ConjunctionExpr *>(expression_.get());
+  // for (auto &expr : conj_expr->children()) {
+  //   if (expr->type() == ExprType::COMPARISON) {
+  //     ComparisonExpr *comp_expr = static_cast<ComparisonExpr *>(expr.get());
+  //     if (comp_expr->left()->type() == ExprType::SUB_SELECT) {
+  //       SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->left().get());
+  //       sub_select_expr->project_phy_oper()->close();
+  //     }
+  //     if (comp_expr->right()->type() == ExprType::SUB_SELECT) {
+  //       SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->right().get());
+  //       sub_select_expr->project_phy_oper()->close();
+  //     }
+  //   }
+  // }
 
   children_[0]->close();
   return RC::SUCCESS;

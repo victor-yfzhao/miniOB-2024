@@ -108,17 +108,22 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
 
   vector<unique_ptr<Expression>> filter_expressions;
 
-  //unique_ptr<Expression> left_expression(condition.left_expr);
-  //unique_ptr<Expression> right_expression(condition.right_expr);
+  unique_ptr<Expression> left_expression;
+  if (1 == condition.has_sub_select) {
+    left_expression.reset(new SubSelectExpr());
+  } else {
+    left_expression.reset(condition.left_expr);
+  }
 
-  if(1 != condition.has_sub_select){
-    unique_ptr<Expression> left_expression(condition.left_expr);
-    expression_binder.bind_expression(left_expression, filter_expressions);
+  unique_ptr<Expression> right_expression;
+  if (2 == condition.has_sub_select) {
+    right_expression.reset(new SubSelectExpr());
+  } else {
+    right_expression.reset(condition.right_expr);
   }
-  if (2 != condition.has_sub_select){
-    unique_ptr<Expression> right_expression(condition.right_expr);
-    expression_binder.bind_expression(right_expression, filter_expressions);
-  }
+
+  expression_binder.bind_expression(left_expression, filter_expressions);
+  expression_binder.bind_expression(right_expression, filter_expressions);
 
   filter_unit = new FilterUnit;
   if(condition.left_is_attr == 1){
@@ -158,12 +163,12 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     }
     // std::unique_ptr<LogicalOperator> project_oper;
     // std::unique_ptr<PhysicalOperator> project_phy_oper;
-    std::unique_ptr<Expression> left_expr(new SubSelectExpr());
-    SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(left_expr.get());
+    std::unique_ptr<Expression> left_sub_expr(new SubSelectExpr());
+    SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(left_sub_expr.get());
     std::shared_ptr<SelectStmt> sub_select_stmt_shared(static_cast<SelectStmt *>(sub_select_stmt));
     sub_select_expr->set_stmt(sub_select_stmt_shared);
 
-    filter_obj.init_expr(left_expr);
+    filter_obj.init_expr(left_sub_expr);
     filter_unit->set_left(filter_obj);
   }
   else{
@@ -213,12 +218,12 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     }
     // std::unique_ptr<LogicalOperator> project_oper;
     // std::unique_ptr<PhysicalOperator> project_phy_oper;
-    std::unique_ptr<Expression> right_expr(new SubSelectExpr());
-    SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(right_expr.get());
+    std::unique_ptr<Expression> right_sub_expr(new SubSelectExpr());
+    SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(right_sub_expr.get());
     std::shared_ptr<SelectStmt> sub_select_stmt_shared(static_cast<SelectStmt *>(sub_select_stmt));
     sub_select_expr->set_stmt(sub_select_stmt_shared);
     
-    filter_obj.init_expr(right_expr);
+    filter_obj.init_expr(right_sub_expr);
     filter_unit->set_right(filter_obj);
   }
   else{

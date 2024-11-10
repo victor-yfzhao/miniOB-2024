@@ -224,7 +224,7 @@ RC LogicalPlanGenerator::create_plan(FilterStmt *filter_stmt, unique_ptr<Logical
     }
 
     if (filter_obj_left.is_expr && left->type() == ExprType::SUB_SELECT){
-      auto sub_select_expr = static_cast<SubSelectExpr *>(filter_obj_left.expr.get());
+      auto sub_select_expr = static_cast<SubSelectExpr *>(left.get());
       auto sub_select_stmt = (Stmt*)sub_select_expr->sub_select();
       unique_ptr<LogicalOperator> sub_select_oper;
       rc = create(sub_select_stmt, sub_select_oper);
