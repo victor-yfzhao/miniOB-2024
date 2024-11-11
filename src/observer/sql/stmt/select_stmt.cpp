@@ -100,6 +100,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     table_map.insert({table_name, table});
   }
   //inner join 
+  std::reverse(select_sql.innerjoin.begin(), select_sql.innerjoin.end());
   for (size_t i = 0; i < select_sql.innerjoin.size(); i++) {
     innerjoinSqlNode tmp = select_sql.innerjoin[i];
 
