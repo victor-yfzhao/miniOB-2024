@@ -108,7 +108,7 @@ struct ConditionSqlNode
 struct innerjoinSqlNode
 {
   std::string relation;
-  ConditionSqlNode condition;
+  std::vector<ConditionSqlNode>            conditions;
 };
 
 struct SelectSqlNode

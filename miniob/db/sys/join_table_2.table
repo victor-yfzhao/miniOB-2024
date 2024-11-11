@@ -31,6 +31,6 @@
 	],
 	"indexes" : null,
 	"storage_format" : 1,
-	"table_id" : 1,
+	"table_id" : 6,
 	"table_name" : "join_table_2"
 }

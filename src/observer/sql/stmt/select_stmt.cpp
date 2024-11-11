@@ -63,6 +63,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     table_map.insert({table_name, table});
   }
   //inner join 
+  std::reverse(select_sql.innerjoin.begin(), select_sql.innerjoin.end());
   for (size_t i = 0; i < select_sql.innerjoin.size(); i++) {
     innerjoinSqlNode tmp = select_sql.innerjoin[i];
 
@@ -81,8 +82,11 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     binder_context.add_table(table);
     tables.push_back(table);
     table_map.insert({table_name, table});
+    for ( ConditionSqlNode condition : tmp.conditions){
+      select_sql.conditions.emplace_back(condition);
+    }
 
-    select_sql.conditions.emplace_back(tmp.condition);
+    
   }
 
   // collect query fields in `select` statement
