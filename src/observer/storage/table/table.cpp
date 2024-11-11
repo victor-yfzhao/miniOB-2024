@@ -334,6 +334,13 @@ RC Table::set_value_to_record(char *record_data, const Value &value, const Field
       copy_len = data_len + 1;
     }
   }
+  if (field->type() == AttrType::VECTORS) {
+    if (copy_len != data_len) {
+      return RC::INVALID_ARGUMENT;
+    }
+  memcpy(record_data + field->offset(), value.data(), sizeof(uintptr_t));
+  return RC::SUCCESS;
+  }
   memcpy(record_data + field->offset(), value.data(), copy_len);
   return RC::SUCCESS;
 }
@@ -874,6 +881,10 @@ RC Table::compare_record_multi_index(const char *former_record, const char *latt
     Value       latter_value = Value(latter_type, latter_data, latter_len);
 
     bool is_equal = former_value.compare(latter_value) == 0;
+
+    if (0 == strcmp("", former_data) && 0 == strcmp("", latter_data)) {
+      is_equal = false;
+    }
 
     // as long as one field is not equal, the two records are not equal
     if(!is_equal) {

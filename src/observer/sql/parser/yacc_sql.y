@@ -41,6 +41,17 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
   return expr;
 }
 
+VectorExpr *create_vector_expression(VectorExpr::Type type,
+                                     Expression *left,
+                                     Expression *right,
+                                     const char *sql_string,
+                                     YYLTYPE *llocp)
+{
+  VectorExpr *expr = new VectorExpr(type, left, right);
+  expr->set_name(token_name(sql_string, llocp));
+  return expr;
+}
+
 UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
                                            Expression *child,
                                            const char *sql_string,
@@ -89,6 +100,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         UPDATE
         LBRACE
         RBRACE
+        LMBRACE
+        RMBRACE
         COMMA
         TRX_BEGIN
         TRX_COMMIT
@@ -99,6 +112,9 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         STRING_T
         FLOAT_T
         VECTOR_T
+        L2_DISTANCE
+        COSINE_DISTANCE
+        INNER_PRODUCT
         DATE_T // ADD DATE
         HELP
         EXIT
@@ -109,6 +125,10 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         JOIN
         INNER
         WHERE
+        IN_SQL
+        EXISTS
+        ORDER
+        ASC
         AND
         NOT // ADD NOT
         IS // ADD IS
@@ -135,6 +155,8 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   Value *                                    value;
   enum CompOp                                comp;
   RelAttrSqlNode *                           rel_attr;
+  innerjoinSqlNode  *                        inner_join;
+  std::vector<innerjoinSqlNode> *            inner_join_list;
   std::vector<AttrInfoSqlNode> *             attr_infos;
   AttrInfoSqlNode *                          attr_info;
   KVPairNode *                               kv_pair;
@@ -145,6 +167,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   std::vector<ConditionSqlNode> *            condition_list;
   std::vector<RelAttrSqlNode> *              rel_attr_list;
   std::vector<std::string> *                 relation_list;
+  std::vector<float> *                       vector;
   char *                                     string;
   int                                        number;
   float                                      floats;
@@ -159,11 +182,14 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 /** type 定义了各种解析后的结果输出的是什么类型。类型对应了 union 中的定义的成员变量名称 **/
 %type <number>              type
 %type <condition>           condition
+%type <condition>           having
 %type <value>               value
 %type <number>              number
 %type <string>              relation
 %type <comp>                comp_op
 %type <rel_attr>            rel_attr
+%type <inner_join_list>     inner_join_list
+%type <inner_join>          inner_join
 %type <attr_infos>          attr_def_list
 %type <attr_info>           attr_def
 %type <value_list>          value_list
@@ -176,6 +202,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 %type <expression>          expression
 %type <expression_list>     expression_list
 %type <expression_list>     group_by
+%type <vector>              vector
 %type <sql_node>            calc_stmt
 %type <sql_node>            select_stmt
 %type <sql_node>            insert_stmt
@@ -500,11 +527,46 @@ value:
       $$ = new Value(AttrType::NULLS, nullptr, 0);
       @$ = @1;
     }
-    |SSS {
+    | SSS {
       char *tmp = common::substr($1,1,strlen($1)-2);
       $$ = new Value(tmp);
       free(tmp);
       free($1);
+    }
+    | LMBRACE vector RMBRACE{
+      $$ = new Value($2);
+      delete $2;
+    }
+    ;
+
+vector:
+    FLOAT {
+      $$ = new std::vector<float>();
+      $$->push_back($1);
+      @$ = @1;
+    }
+    |NUMBER {
+      $$ = new std::vector<float>();
+      $$->push_back((float)$1);
+      @$ = @1;
+    }
+    | FLOAT COMMA vector {
+      if ($3 != nullptr) {
+        $$ = $3;
+      } else {
+        $$ = new std::vector<float>;
+      }
+      $$->insert($$->begin(), $1);
+      @$ = @1;
+    }
+    | NUMBER COMMA vector {
+      if ($3 != nullptr) {
+        $$ = $3;
+      } else {
+        $$ = new std::vector<float>;
+      }
+      $$->insert($$->begin(), (float)$1);
+      @$ = @1;
     }
     ;
 storage_format:
@@ -575,10 +637,18 @@ kv_pair:
       free($1);
       delete $3;
     }
+    | ID EQ LBRACE select_stmt RBRACE
+    {
+      $$ = new KVPairNode;
+      $$->key = $1;
+      $$->sub_select = &$4->selection;
+      $$->has_sub_select = true;
+      free($1);
+    }
     ;
   
 select_stmt:        /*  select 语句的语法解析树*/
-    SELECT expression_list FROM rel_list where group_by
+    SELECT expression_list FROM rel_list inner_join_list where group_by having 
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -591,15 +661,26 @@ select_stmt:        /*  select 语句的语法解析树*/
         delete $4;
       }
 
-      if ($5 != nullptr) {
-        $$->selection.conditions.swap(*$5);
+      if($5 != nullptr) {
+        $$->selection.innerjoin.swap(*$5);
         delete $5;
       }
 
       if ($6 != nullptr) {
-        $$->selection.group_by.swap(*$6);
+        $$->selection.conditions.swap(*$6);
         delete $6;
       }
+
+      if ($7 != nullptr) {
+        $$->selection.group_by.swap(*$7);
+        delete $7;
+      }
+
+      if($8 != nullptr) {
+        $$->selection.having = $8;
+      }
+
+      $$->selection.sub_select = nullptr;
     }
     ;
 calc_stmt:
@@ -640,10 +721,10 @@ expression:
     | expression '/' expression {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::DIV, $1, $3, sql_string, &@$);
     }
-    | LBRACE expression RBRACE {
+    /* | LBRACE expression RBRACE {
       $$ = $2;
       $$->set_name(token_name(sql_string, &@$));
-    }
+    } */
     | '-' expression %prec UMINUS {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $2, nullptr, sql_string, &@$);
     }
@@ -660,6 +741,15 @@ expression:
     }
     | '*' {
       $$ = new StarExpr();
+    }
+    | L2_DISTANCE LBRACE expression COMMA expression RBRACE {
+      $$ = create_vector_expression(VectorExpr::Type::L2_DISTANCE, $3, $5, sql_string, &@$);
+    }
+    | COSINE_DISTANCE LBRACE expression COMMA expression RBRACE {
+      $$ = create_vector_expression(VectorExpr::Type::COSINE_DISTANCE, $3, $5, sql_string, &@$);
+    }
+    | INNER_PRODUCT LBRACE expression COMMA expression RBRACE {
+      $$ = create_vector_expression(VectorExpr::Type::INNER_PRODUCT, $3, $5, sql_string, &@$);
     }
     // your code here
     | COUNT LBRACE expression RBRACE{
@@ -773,79 +863,57 @@ condition_list:
     }
     ;
 condition:
-    rel_attr comp_op value
-    {
+     expression comp_op LBRACE select_stmt RBRACE {
       $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
+      if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
+      if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
+      $$->left_expr=$1;
       $$->right_is_attr = 0;
-      $$->right_value = *$3;
+      $$->has_sub_select = 2;
+      $$->sub_select = &$4->selection;
       $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | value comp_op value 
-    {
+    } 
+    
+    | 
+    LBRACE select_stmt RBRACE comp_op expression { 
       $$ = new ConditionSqlNode;
       $$->left_is_attr = 0;
-      $$->left_value = *$1;
+      $$->has_sub_select = 1;
+      $$->sub_select = &$2->selection;
+      if($5->type()==ExprType::UNBOUND_FIELD){$$->right_is_attr = 1;}
+      if($5->type()==ExprType::VALUE){$$->right_is_val = 1;}
+      $$->right_expr=$5;
+      $$->comp = $4;
+    } 
+    // const value
+    | expression comp_op LBRACE value value_list RBRACE {
+      $$ = new ConditionSqlNode;
+      if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
+      if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
+      $$->left_expr=$1;
       $$->right_is_attr = 0;
-      $$->right_value = *$3;
+      $$->has_sub_select = 2;
+      $$->right_is_const = 1;
+      // 
+      if ($5 != nullptr) {
+        $$->values.swap(*$5);
+        delete $5;
+      }
+      $$->values.emplace_back(*$4);
       $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | rel_attr comp_op rel_attr
-    {
+    } 
+    | expression comp_op expression {
       $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 1;
-      $$->right_attr = *$3;
+      if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
+      if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
+      $$->left_expr=$1;
+      if($3->type()==ExprType::UNBOUND_FIELD){$$->right_is_attr = 1;}
+      if($3->type()==ExprType::VALUE){$$->right_is_val = 1;}
+      $$->right_expr=$3;
       $$->comp = $2;
-
-      delete $1;
-      delete $3;
+      $$->has_sub_select = 0;
     }
-    | value comp_op rel_attr
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 0;
-      $$->left_value = *$1;
-      $$->right_is_attr = 1;
-      $$->right_attr = *$3;
-      $$->comp = $2;
-
-      delete $1;
-      delete $3;
-    }
-    | rel_attr LIKE_SQL value
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 0;
-      $$->right_value = *$3;
-      $$->comp = LIKE;
-
-      delete $1;
-      delete $3;
-    }
-    | rel_attr NOT LIKE_SQL value
-    {
-      $$ = new ConditionSqlNode;
-      $$->left_is_attr = 1;
-      $$->left_attr = *$1;
-      $$->right_is_attr = 0;
-      $$->right_value = *$4;
-      $$->comp = NOT_LIKE;
-
-      delete $1;
-      delete $4;
-    }
-    | rel_attr IS NULL_T
+    /* | rel_attr IS NULL_T
     {
       $$ = new ConditionSqlNode;
       $$->left_is_attr = 1;
@@ -853,6 +921,7 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
     }
@@ -864,6 +933,7 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NOT_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
     }
@@ -875,6 +945,7 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
     }
@@ -886,9 +957,10 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NOT_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
-    }
+    } */
     ;
 
 comp_op:
@@ -898,9 +970,47 @@ comp_op:
     | LE { $$ = LESS_EQUAL; }
     | GE { $$ = GREAT_EQUAL; }
     | NE { $$ = NOT_EQUAL; }
+    | LIKE_SQL { $$ = LIKE; }
+    | NOT LIKE_SQL { $$ = NOT_LIKE; }
+    | IN_SQL { $$ = IN; }
+    | NOT IN_SQL { $$ = NOT_IN; }
+    | IS { $$ = IS_NULL; }
+    | IS NOT { $$ = IS_NOT_NULL; }
     ;
-
+having:
+    /* empty */
+    {
+      $$ = nullptr; 
+    }
+    | HAVING condition
+    {
+      $$ = $2; // 返回 expression_list
+    }
+    ;
 // your code here
+
+inner_join_list:
+    {
+      $$ = new std::vector<innerjoinSqlNode>;
+    }
+    | inner_join inner_join_list
+    {
+      $$ = $2;
+      $$->emplace_back(*$1);
+      delete $1;
+    }
+    ;
+inner_join:
+    INNER JOIN relation ON condition
+    {
+      // 创建并填充 innerjoinSqlNode
+      $$ = new innerjoinSqlNode;
+      $$->relation  =  $3;
+      $$->condition = *$5;
+      $$->condition.left_is_attr = 1;
+      $$->condition.right_is_attr = 1;
+    }
+    ;
 group_by:
     /* empty */
     {
@@ -909,10 +1019,6 @@ group_by:
     | GROUP BY expression_list
     {
       $$ = $3; // 返回 expression_list
-    }
-    | GROUP BY expression_list HAVING expression
-    {
-      $$ = nullptr ; //unable to do
     }
     ;
 load_data_stmt:

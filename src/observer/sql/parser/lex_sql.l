@@ -100,6 +100,10 @@ FROM                                    RETURN_TOKEN(FROM);
 JOIN                                    RETURN_TOKEN(JOIN);
 INNER                                   RETURN_TOKEN(INNER);
 WHERE                                   RETURN_TOKEN(WHERE);
+IN                                      RETURN_TOKEN(IN_SQL);
+EXISTS                                  RETURN_TOKEN(EXISTS);
+ORDER                                   RETURN_TOKEN(ORDER);
+ASC                                     RETURN_TOKEN(ASC);
 AND                                     RETURN_TOKEN(AND);
 NOT                                     RETURN_TOKEN(NOT);
 IS                                      RETURN_TOKEN(IS);
@@ -134,9 +138,14 @@ AVG                                     RETURN_TOKEN(AVG);
 HAVING                                  RETURN_TOKEN(HAVING); 
 STORAGE                                 RETURN_TOKEN(STORAGE);
 FORMAT                                  RETURN_TOKEN(FORMAT);
+l2_distance                             RETURN_TOKEN(L2_DISTANCE);
+cosine_distance                         RETURN_TOKEN(COSINE_DISTANCE);
+inner_product                           RETURN_TOKEN(INNER_PRODUCT);
 {ID}                                    yylval->string=strdup(yytext); RETURN_TOKEN(ID);
 "("                                     RETURN_TOKEN(LBRACE);
 ")"                                     RETURN_TOKEN(RBRACE);
+"["                                     RETURN_TOKEN(LMBRACE);
+"]"                                     RETURN_TOKEN(RMBRACE);
 
 ","                                     RETURN_TOKEN(COMMA);
 "="                                     RETURN_TOKEN(EQ);
@@ -153,6 +162,7 @@ FORMAT                                  RETURN_TOKEN(FORMAT);
 "/"                                     { return yytext[0]; }
 \"[^"]*\"                               yylval->string = strdup(yytext); RETURN_TOKEN(SSS);
 '[^']*\'                                yylval->string = strdup(yytext); RETURN_TOKEN(SSS);
+
 
 .                                       LOG_DEBUG("Unknown character [%c]",yytext[0]); return yytext[0];
 %%

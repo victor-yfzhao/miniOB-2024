@@ -34,6 +34,10 @@ int IntegerType::compare(const Value &left, const Value &right) const
 
 RC IntegerType::add(const Value &left, const Value &right, Value &result) const
 {
+  if(right.attr_type() == AttrType::NULLS){
+    result.set_null();
+    return RC::SUCCESS;
+  }
   result.set_int(left.get_int() + right.get_int());
   return RC::SUCCESS;
 }
@@ -78,4 +82,38 @@ RC IntegerType::to_string(const Value &val, string &result) const
   ss << val.value_.int_value_;
   result = ss.str();
   return RC::SUCCESS;
+}
+
+int IntegerType::cast_cost(AttrType type)
+{
+  if(type == AttrType::INTS){
+    return 1;
+  }
+  else if(type == AttrType::FLOATS){
+    return 0;
+  }
+  return INT32_MAX;
+  
+}
+
+RC IntegerType::cast_to(const Value&val, AttrType type , Value &result) const
+{
+  if(type == AttrType::INTS){
+    result.set_int(val.get_int());
+    return RC::SUCCESS;
+  }
+  else if(type == AttrType::FLOATS){
+    result.set_float(val.get_int());
+    return RC::SUCCESS;
+  }
+  else if (type == AttrType::CHARS){
+    string str;
+    RC rc = to_string(val, str);
+    if(rc != RC::SUCCESS){
+      return rc;
+    }
+    result.set_string(str.c_str(), str.length());
+    return RC::SUCCESS;
+  }
+  return RC::UNSUPPORTED;
 }

@@ -22,6 +22,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/expr/aggregator.h"
 #include "storage/common/chunk.h"
 
+
 class Tuple;
 
 /**
@@ -47,6 +48,9 @@ enum class ExprType
   CONJUNCTION,  ///< 多个表达式使用同一种关系(AND或OR)来联结
   ARITHMETIC,   ///< 算术运算
   AGGREGATION,  ///< 聚合运算
+  VECTOR_EXPR,  ///< 向量表达式
+
+  SUB_SELECT,   ///< 子查询
 };
 
 /**
@@ -122,6 +126,11 @@ public:
    */
   virtual RC eval(Chunk &chunk, std::vector<uint8_t> &select) { return RC::UNIMPLEMENTED; }
 
+  /**
+   * @brief set Trx
+   */
+  virtual void set_trx(Trx *trx) { trx_ = trx; }
+
 protected:
   /**
    * @brief 表达式在下层算子返回的 chunk 中的位置
@@ -130,6 +139,8 @@ protected:
    * chunk 中 下标为 pos_ 的列中。
    */
   int pos_ = -1;
+
+  Trx *trx_ = nullptr;
 
 private:
   std::string name_;
@@ -310,6 +321,9 @@ public:
   RC compare_column(const Column &left, const Column &right, std::vector<uint8_t> &result) const;
 
 private:
+  RC get_value_when_have_sub_select(const Tuple &tuple, Value &value, bool left, bool have_cast) const;
+
+private:
   CompOp                      comp_;
   std::unique_ptr<Expression> left_;
   std::unique_ptr<Expression> right_;
@@ -366,11 +380,8 @@ public:
 public:
   ArithmeticExpr(Type type, Expression *left, Expression *right);
   ArithmeticExpr(Type type, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right);
-  virtual ~ArithmeticExpr() = default;
-
   bool     equal(const Expression &other) const override;
   ExprType type() const override { return ExprType::ARITHMETIC; }
-
   AttrType value_type() const override;
   int      value_length() const override
   {
@@ -467,4 +478,91 @@ public:
 private:
   Type                        aggregate_type_;
   std::unique_ptr<Expression> child_;
+};
+
+class VectorExpr : public Expression
+{
+  public:
+    enum class Type
+    {
+      L2_DISTANCE,
+      COSINE_DISTANCE,
+      INNER_PRODUCT,
+    };
+
+  public:
+    VectorExpr(Type type, Expression *left, Expression *right);
+    VectorExpr(Type type, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right);
+    virtual ~VectorExpr() = default;
+
+    bool equal(const Expression &other) const override;
+    ExprType type() const override { return ExprType::VECTOR_EXPR; }
+
+    AttrType value_type() const override;
+    int      value_length() const override { return 4; }
+
+    RC get_value(const Tuple &tuple, Value &value) const override;
+
+    // RC get_column(Chunk &chunk, Column &column) override;
+
+    RC try_get_value(Value &value) const override;
+
+    Type vector_type() const { return vector_type_; }
+
+    std::unique_ptr<Expression> &left() { return left_; }
+    std::unique_ptr<Expression> &right() { return right_; }
+  private:
+    RC calc_value(const Value &left_value, const Value &right_value, Value &value) const;
+
+    // RC calc_column(const Column &left_column, const Column &right_column, Column &column) const;
+
+    // template <bool LEFT_CONSTANT, bool RIGHT_CONSTANT>
+    // RC execute_calc(const Column &left, const Column &right, Column &result, Type type, AttrType attr_type) const;
+
+  private:
+    Type                        vector_type_;
+    std::unique_ptr<Expression> left_;
+    std::unique_ptr<Expression> right_;
+};
+
+/**
+ * @brief 子查询表达式
+ * @ingroup Expression
+ */
+class SelectStmt;
+class LogicalOperator;
+class PhysicalOperator;
+class SubSelectExpr : public Expression
+{
+public:
+  SubSelectExpr() = default;
+  SubSelectExpr(SelectStmt * sub_select , std::shared_ptr<LogicalOperator>  project_oper, std::shared_ptr<PhysicalOperator> project_phy_oper) ;
+  SubSelectExpr(SelectSqlNode * sub_select_node) : Expression(), sub_select_node_(sub_select_node) {}
+  virtual ~SubSelectExpr() = default;
+
+  RC set_stmt(std::shared_ptr<SelectStmt> &stmt) { sub_select_ = std::move(stmt); return RC::SUCCESS; };
+  RC set_project_oper(std::shared_ptr<LogicalOperator> &project_oper);
+  RC set_project_phy_oper(std::shared_ptr<PhysicalOperator> &project_phy_oper);
+
+  const SelectSqlNode *sub_select_node() const { return sub_select_node_; }
+  const SelectStmt *sub_select() const { return sub_select_.get(); }
+  LogicalOperator *project_oper() { return project_oper_.get(); }
+  PhysicalOperator *project_phy_oper() { return project_phy_oper_.get(); }
+  std::vector<Value> &sub_select_result() { return sub_select_result_; }
+
+  ExprType type() const override { return ExprType::SUB_SELECT; }
+  AttrType value_type() const override;
+
+  RC get_value(const Tuple &tuple, Value &value) const override;
+  RC get_value(int index, Value &value) const;
+
+  RC set_sub_select_result();
+  RC set_sub_select_result(const std::vector<Value> &result);
+
+private:
+  SelectSqlNode                    *sub_select_node_;
+  std::shared_ptr<SelectStmt>       sub_select_;
+  std::shared_ptr<LogicalOperator>  project_oper_;
+  std::shared_ptr<PhysicalOperator> project_phy_oper_;
+  std::vector<Value>                sub_select_result_;
 };

@@ -214,7 +214,11 @@ public:
       }
     }
     cell.set_type(field_meta->type());
-    cell.set_data(this->record_->data() + field_meta->offset(), field_meta->len());
+    if(field_meta->type() == AttrType::VECTORS) {
+      cell.set_data(this->record_->data()+ field_meta->offset(), sizeof(uintptr_t));
+    } else {
+    cell.set_data(this->record_->data()+ field_meta->offset(), field_meta->len());}
+
     return RC::SUCCESS;
   }
 

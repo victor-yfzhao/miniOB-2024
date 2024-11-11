@@ -1,0 +1,6 @@
+2024-11-09 20:42:27.372 [info] Started local extension host with pid 4048.
+2024-11-09 20:42:27.506 [info] Started initializing default profile extensions in extensions installation folder. file:///root/.vscode/extensions
+2024-11-09 20:42:28.223 [info] Completed initializing default profile extensions in extensions installation folder. file:///root/.vscode/extensions
+2024-11-09 20:42:30.337 [error] [network] #1: https://az764295.vo.msecnd.net/extensions/chat.json - error GET Offline
+2024-11-09 20:42:30.338 [warning] Failed to fetch chat participant registry Offline
+2024-11-09 20:42:30.728 [info] [perf] Render performance baseline is 108ms

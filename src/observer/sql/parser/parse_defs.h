@@ -55,9 +55,12 @@ enum CompOp
   NOT_LIKE,     ///< "NOT LIKE"
   IS_NULL,      ///< "IS NULL"
   IS_NOT_NULL,  ///< "IS NOT NULL"
+  IN,           ///< "IN"
+  NOT_IN,       ///< "NOT IN"
   NO_OP
 };
 
+struct SelectSqlNode;
 /**
  * @brief 表示一个条件比较
  * @ingroup SQLParser
@@ -68,6 +71,19 @@ enum CompOp
  */
 struct ConditionSqlNode
 {
+  Expression*   left_expr;
+  Expression*   right_expr;
+  SelectSqlNode* sub_select;
+
+  //to do const value
+  int right_is_const = 0;
+  std::vector<Value> values;
+
+  int has_sub_select;           ///< 0: no sub-select, 1: left part is sub-select, 2: right part is sub-select
+  int left_is_expr;
+  int right_is_expr;
+  int left_is_val;
+  int right_is_val;
   int left_is_attr;              ///< TRUE if left-hand side is an attribute
                                  ///< 1时，操作符左边是属性名，0时，是属性值
   Value          left_value;     ///< left-hand side value if left_is_attr = FALSE
@@ -89,13 +105,21 @@ struct ConditionSqlNode
  * where 条件 conditions，这里表示使用AND串联起来多个条件。正常的SQL语句会有OR，NOT等，
  * 甚至可以包含复杂的表达式。
  */
+struct innerjoinSqlNode
+{
+  std::string relation;
+  ConditionSqlNode condition;
+};
 
 struct SelectSqlNode
 {
   std::vector<std::unique_ptr<Expression>> expressions;  ///< 查询的表达式
   std::vector<std::string>                 relations;    ///< 查询的表
   std::vector<ConditionSqlNode>            conditions;   ///< 查询条件，使用AND串联起来多个条件
+  std::vector<innerjoinSqlNode>            innerjoin;
   std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
+  SelectSqlNode                           *sub_select;   ///< 子查询
+  ConditionSqlNode                        *having=nullptr;       ///< group by having 
 };
 
 /**
@@ -130,8 +154,10 @@ struct DeleteSqlNode
 
 struct KVPairNode
 {
-  std::string key;
-  Value       value;
+  std::string    key;
+  Value          value;
+  bool           has_sub_select = false;
+  SelectSqlNode *sub_select;
 };
 
 /**

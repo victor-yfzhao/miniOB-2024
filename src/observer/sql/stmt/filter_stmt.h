@@ -16,6 +16,7 @@ See the Mulan PSL v2 for more details. */
 
 #include "sql/expr/expression.h"
 #include "sql/parser/parse_defs.h"
+#include "sql/parser/expression_binder.h"
 #include "sql/stmt/stmt.h"
 #include <unordered_map>
 #include <vector>
@@ -23,24 +24,59 @@ See the Mulan PSL v2 for more details. */
 class Db;
 class Table;
 class FieldMeta;
+class SelectStmt;
 
 struct FilterObj
 {
   bool  is_attr;
+  bool  is_expr = false;
+  bool  is_sub_select = false;
   Field field;
   Value value;
+  // SelectStmt *sub_select = nullptr;
+  unique_ptr<Expression> expr;
+  
+  FilterObj() = default;
+  FilterObj& operator=( FilterObj &other)
+  {
+    if (this != &other) {
+      is_attr = other.is_attr;
+      is_expr = other.is_expr;
+      field = other.field;
+      value = other.value;
+      expr = std::move(other.expr);
+    }
+    return *this;
+  }
 
   void init_attr(const Field &field)
   {
     is_attr     = true;
+    is_expr     = false;
     this->field = field;
   }
 
   void init_value(const Value &value)
   {
     is_attr     = false;
+    is_expr     = false;
     this->value = value;
   }
+  
+  void init_expr(unique_ptr<Expression>& expr)
+  {
+    is_attr = false;
+    is_expr = true;
+    this->expr = std::move(expr);
+  }
+
+  // void init_sub_select(SelectStmt *sub_select)
+  // {
+  //   is_attr = false;
+  //   is_expr = false;
+  //   is_sub_select = true;
+  //   this->sub_select = sub_select;
+  // }
 };
 
 class FilterUnit
@@ -53,11 +89,11 @@ public:
 
   CompOp comp() const { return comp_; }
 
-  void set_left(const FilterObj &obj) { left_ = obj; }
-  void set_right(const FilterObj &obj) { right_ = obj; }
+  void set_left(FilterObj &obj) { left_ = obj; }
+  void set_right(FilterObj &obj) { right_ = obj; }
 
-  const FilterObj &left() const { return left_; }
-  const FilterObj &right() const { return right_; }
+  FilterObj &left()  { return left_; }
+  FilterObj &right()  { return right_; }
 
 private:
   CompOp    comp_ = NO_OP;
@@ -76,14 +112,14 @@ public:
   virtual ~FilterStmt();
 
 public:
-  const std::vector<FilterUnit *> &filter_units() const { return filter_units_; }
+  std::vector<FilterUnit *> &filter_units()  { return filter_units_; }
 
 public:
   static RC create(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-      const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt);
+      const ConditionSqlNode *conditions, int condition_num, FilterStmt *&stmt, BinderContext binder_context);
 
   static RC create_filter_unit(Db *db, Table *default_table, std::unordered_map<std::string, Table *> *tables,
-      const ConditionSqlNode &condition, FilterUnit *&filter_unit);
+      const ConditionSqlNode &condition, FilterUnit *&filter_unit , BinderContext binder_context);
 
 private:
   std::vector<FilterUnit *> filter_units_;  // 默认当前都是AND关系

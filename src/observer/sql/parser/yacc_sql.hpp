@@ -74,49 +74,58 @@ extern int yydebug;
     UPDATE = 280,
     LBRACE = 281,
     RBRACE = 282,
-    COMMA = 283,
-    TRX_BEGIN = 284,
-    TRX_COMMIT = 285,
-    TRX_ROLLBACK = 286,
-    NULL_T = 287,
-    NULLABLE = 288,
-    INT_T = 289,
-    STRING_T = 290,
-    FLOAT_T = 291,
-    VECTOR_T = 292,
-    DATE_T = 293,
-    HELP = 294,
-    EXIT = 295,
-    DOT = 296,
-    INTO = 297,
-    VALUES = 298,
-    FROM = 299,
-    JOIN = 300,
-    INNER = 301,
-    WHERE = 302,
-    AND = 303,
-    NOT = 304,
-    IS = 305,
-    LIKE_SQL = 306,
-    SET = 307,
-    ON = 308,
-    LOAD = 309,
-    DATA = 310,
-    INFILE = 311,
-    EXPLAIN = 312,
-    STORAGE = 313,
-    FORMAT = 314,
-    EQ = 315,
-    LT = 316,
-    GT = 317,
-    LE = 318,
-    GE = 319,
-    NE = 320,
-    NUMBER = 321,
-    FLOAT = 322,
-    ID = 323,
-    SSS = 324,
-    UMINUS = 325
+    LMBRACE = 283,
+    RMBRACE = 284,
+    COMMA = 285,
+    TRX_BEGIN = 286,
+    TRX_COMMIT = 287,
+    TRX_ROLLBACK = 288,
+    NULL_T = 289,
+    NULLABLE = 290,
+    INT_T = 291,
+    STRING_T = 292,
+    FLOAT_T = 293,
+    VECTOR_T = 294,
+    L2_DISTANCE = 295,
+    COSINE_DISTANCE = 296,
+    INNER_PRODUCT = 297,
+    DATE_T = 298,
+    HELP = 299,
+    EXIT = 300,
+    DOT = 301,
+    INTO = 302,
+    VALUES = 303,
+    FROM = 304,
+    JOIN = 305,
+    INNER = 306,
+    WHERE = 307,
+    IN_SQL = 308,
+    EXISTS = 309,
+    ORDER = 310,
+    ASC = 311,
+    AND = 312,
+    NOT = 313,
+    IS = 314,
+    LIKE_SQL = 315,
+    SET = 316,
+    ON = 317,
+    LOAD = 318,
+    DATA = 319,
+    INFILE = 320,
+    EXPLAIN = 321,
+    STORAGE = 322,
+    FORMAT = 323,
+    EQ = 324,
+    LT = 325,
+    GT = 326,
+    LE = 327,
+    GE = 328,
+    NE = 329,
+    NUMBER = 330,
+    FLOAT = 331,
+    ID = 332,
+    SSS = 333,
+    UMINUS = 334
   };
 #endif
 
@@ -124,13 +133,15 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 132 "yacc_sql.y"
+#line 152 "yacc_sql.y"
 
   ParsedSqlNode *                            sql_node;
   ConditionSqlNode *                         condition;
   Value *                                    value;
   enum CompOp                                comp;
   RelAttrSqlNode *                           rel_attr;
+  innerjoinSqlNode  *                        inner_join;
+  std::vector<innerjoinSqlNode> *            inner_join_list;
   std::vector<AttrInfoSqlNode> *             attr_infos;
   AttrInfoSqlNode *                          attr_info;
   KVPairNode *                               kv_pair;
@@ -141,11 +152,12 @@ union YYSTYPE
   std::vector<ConditionSqlNode> *            condition_list;
   std::vector<RelAttrSqlNode> *              rel_attr_list;
   std::vector<std::string> *                 relation_list;
+  std::vector<float> *                       vector;
   char *                                     string;
   int                                        number;
   float                                      floats;
 
-#line 149 "yacc_sql.hpp"
+#line 161 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
