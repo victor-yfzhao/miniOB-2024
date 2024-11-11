@@ -882,6 +882,10 @@ RC Table::compare_record_multi_index(const char *former_record, const char *latt
 
     bool is_equal = former_value.compare(latter_value) == 0;
 
+    if (0 == strcmp("", former_data) && 0 == strcmp("", latter_data)) {
+      is_equal = false;
+    }
+
     // as long as one field is not equal, the two records are not equal
     if(!is_equal) {
       result_ = true;
