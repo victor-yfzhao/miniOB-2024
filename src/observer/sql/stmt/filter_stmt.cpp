@@ -95,7 +95,10 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
 
   unique_ptr<Expression> left_expression(condition.left_expr);
   rc = expression_binder.bind_expression(left_expression, filter_expressions);
-
+  if(rc==RC::SCHEMA_FIELD_MISSING){
+    LOG_WARN("no such field in table ");
+    return rc;
+  }
 
   unique_ptr<Expression> right_expression(condition.right_expr);
   rc = expression_binder.bind_expression(right_expression, filter_expressions);
