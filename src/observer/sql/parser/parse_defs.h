@@ -147,8 +147,10 @@ struct DeleteSqlNode
 
 struct KVPairNode
 {
-  std::string key;
-  Value       value;
+  std::string    key;
+  Value          value;
+  bool           has_sub_select = false;
+  SelectSqlNode *sub_select;
 };
 
 /**

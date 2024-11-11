@@ -632,6 +632,14 @@ kv_pair:
       free($1);
       delete $3;
     }
+    | ID EQ LBRACE select_stmt RBRACE
+    {
+      $$ = new KVPairNode;
+      $$->key = $1;
+      $$->sub_select = &$4->selection;
+      $$->has_sub_select = true;
+      free($1);
+    }
     ;
   
 select_stmt:        /*  select 语句的语法解析树*/

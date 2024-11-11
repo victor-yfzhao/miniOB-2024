@@ -324,6 +324,23 @@ RC LogicalPlanGenerator::create_plan(UpdateStmt *update_stmt, unique_ptr<Logical
       return rc;
     }
 
+    for (auto &kv_pair : update_stmt->kv_pairs()) {
+      if (kv_pair.second->type() == ExprType::SUB_SELECT) {
+        auto sub_select_expr = static_cast<SubSelectExpr *>(kv_pair.second.get());
+        if (sub_select_expr->sub_select_result().empty()){
+          auto sub_select_stmt = (Stmt*)sub_select_expr->sub_select();
+          unique_ptr<LogicalOperator> sub_select_oper;
+          rc = create(sub_select_stmt, sub_select_oper);
+          if (rc != RC::SUCCESS) {
+            LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
+            return rc;
+          }
+          std::shared_ptr<LogicalOperator> sub_select_oper_shared(sub_select_oper.release());
+          sub_select_expr->set_project_oper(sub_select_oper_shared);
+        }
+      }
+    }
+
     unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table, update_stmt->kv_pairs()));
 
     if (predicate_oper) {

@@ -340,6 +340,23 @@ RC PhysicalPlanGenerator::create_plan(UpdateLogicalOperator &update_oper, unique
     }
   }
 
+  for (auto &kv_pair : update_oper.kv_pairs()) {
+    if (kv_pair.second->type() == ExprType::SUB_SELECT) {
+      SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(kv_pair.second.get());
+      if (sub_select_expr->sub_select_result().empty()){
+        LogicalOperator *sub_select_oper = sub_select_expr->project_oper();
+        unique_ptr<PhysicalOperator> sub_select_phy_oper;
+        rc = create(*sub_select_oper, sub_select_phy_oper);
+        if (rc != RC::SUCCESS) {
+          LOG_WARN("failed to create sub select operator. rc=%s", strrc(rc));
+          return rc;
+        }
+        shared_ptr<PhysicalOperator> sub_select_expr_oper(sub_select_phy_oper.release());
+        sub_select_expr->set_project_phy_oper(sub_select_expr_oper);
+      }
+    }
+  }
+
   oper = unique_ptr<PhysicalOperator>(new UpdatePhysicalOperator(update_oper.table(), update_oper.kv_pairs()));
 
   if (child_physical_oper) {
