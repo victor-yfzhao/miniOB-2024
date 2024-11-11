@@ -1,0 +1,12 @@
+2024-11-09 20:42:25.385 [error] Error: Unable to retrieve mac address (unexpected format)
+    at fE (file:///snap/code/174/usr/share/code/resources/app/out/main.js:49:28217)
+    at wE (file:///snap/code/174/usr/share/code/resources/app/out/main.js:49:28594)
+    at async file:///snap/code/174/usr/share/code/resources/app/out/main.js:49:28511
+    at async A$ (file:///snap/code/174/usr/share/code/resources/app/out/main.js:72:107181)
+    at async R$ (file:///snap/code/174/usr/share/code/resources/app/out/main.js:72:107544)
+    at async Promise.all (index 0)
+    at async Eu.startup (file:///snap/code/174/usr/share/code/resources/app/out/main.js:81:6552)
+    at async B2.a (file:///snap/code/174/usr/share/code/resources/app/out/main.js:111:36965)
+2024-11-09 20:42:25.399 [info] update#setState idle
+2024-11-09 20:42:55.398 [info] update#setState checking for updates
+2024-11-09 20:42:55.402 [info] update#setState idle

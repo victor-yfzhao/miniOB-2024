@@ -700,7 +700,7 @@ static const yytype_int16 yyrline[] =
      878,   881,   887,   892,   902,   907,   912,   926,   929,   935,
      938,   943,   950,   960,   971,   982,   993,  1007,  1008,  1009,
     1010,  1011,  1012,  1013,  1014,  1018,  1021,  1030,  1033,  1041,
-    1051,  1054,  1060,  1073,  1081,  1091,  1092
+    1053,  1056,  1062,  1075,  1083,  1093,  1094
 };
 #endif
 
@@ -2961,30 +2961,32 @@ yyreduce:
     {
       // 创建并填充 innerjoinSqlNode
       (yyval.inner_join) = new innerjoinSqlNode;
-      (yyval.inner_join)->relation  = (yyvsp[-2].string);
+      (yyval.inner_join)->relation  =  (yyvsp[-2].string);
       (yyval.inner_join)->condition = *(yyvsp[0].condition);
+      (yyval.inner_join)->condition.left_is_attr = 1;
+      (yyval.inner_join)->condition.right_is_attr = 1;
     }
-#line 2968 "yacc_sql.cpp"
+#line 2970 "yacc_sql.cpp"
     break;
 
   case 130: /* group_by: %empty  */
-#line 1051 "yacc_sql.y"
+#line 1053 "yacc_sql.y"
     {
       (yyval.expression_list) = nullptr; // 当 GROUP BY 为空时，赋值为 nullptr
     }
-#line 2976 "yacc_sql.cpp"
+#line 2978 "yacc_sql.cpp"
     break;
 
   case 131: /* group_by: GROUP BY expression_list  */
-#line 1055 "yacc_sql.y"
+#line 1057 "yacc_sql.y"
     {
       (yyval.expression_list) = (yyvsp[0].expression_list); // 返回 expression_list
     }
-#line 2984 "yacc_sql.cpp"
+#line 2986 "yacc_sql.cpp"
     break;
 
   case 132: /* load_data_stmt: LOAD DATA INFILE SSS INTO TABLE ID  */
-#line 1061 "yacc_sql.y"
+#line 1063 "yacc_sql.y"
     {
       char *tmp_file_name = common::substr((yyvsp[-3].string), 1, strlen((yyvsp[-3].string)) - 2);
       
@@ -2994,20 +2996,20 @@ yyreduce:
       free((yyvsp[0].string));
       free(tmp_file_name);
     }
-#line 2998 "yacc_sql.cpp"
+#line 3000 "yacc_sql.cpp"
     break;
 
   case 133: /* explain_stmt: EXPLAIN command_wrapper  */
-#line 1074 "yacc_sql.y"
+#line 1076 "yacc_sql.y"
     {
       (yyval.sql_node) = new ParsedSqlNode(SCF_EXPLAIN);
       (yyval.sql_node)->explain.sql_node = std::unique_ptr<ParsedSqlNode>((yyvsp[0].sql_node));
     }
-#line 3007 "yacc_sql.cpp"
+#line 3009 "yacc_sql.cpp"
     break;
 
   case 134: /* set_variable_stmt: SET ID EQ value  */
-#line 1082 "yacc_sql.y"
+#line 1084 "yacc_sql.y"
     {
       (yyval.sql_node) = new ParsedSqlNode(SCF_SET_VARIABLE);
       (yyval.sql_node)->set_variable.name  = (yyvsp[-2].string);
@@ -3015,11 +3017,11 @@ yyreduce:
       free((yyvsp[-2].string));
       delete (yyvsp[0].value);
     }
-#line 3019 "yacc_sql.cpp"
+#line 3021 "yacc_sql.cpp"
     break;
 
 
-#line 3023 "yacc_sql.cpp"
+#line 3025 "yacc_sql.cpp"
 
       default: break;
     }
@@ -3248,7 +3250,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 1094 "yacc_sql.y"
+#line 1096 "yacc_sql.y"
 
 //_____________________________________________________________________
 extern void scan_string(const char *str, yyscan_t scanner);

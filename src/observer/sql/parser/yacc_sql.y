@@ -1042,8 +1042,9 @@ inner_join:
     {
       // 创建并填充 innerjoinSqlNode
       $$ = new innerjoinSqlNode;
-      $$->relation  = $3;
+      $$->relation  =  $3;
       $$->condition = *$5;
+
     }
     ;
 group_by:
