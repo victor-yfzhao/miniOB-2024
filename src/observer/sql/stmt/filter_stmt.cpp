@@ -122,8 +122,15 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     right_expression.reset(condition.right_expr);
   }
 
-  expression_binder.bind_expression(left_expression, filter_expressions);
-  expression_binder.bind_expression(right_expression, filter_expressions);
+  rc = expression_binder.bind_expression(left_expression, filter_expressions);
+  if (rc != RC::SUCCESS) {
+    return rc;
+  }
+  
+  rc = expression_binder.bind_expression(right_expression, filter_expressions);
+  if (rc != RC::SUCCESS) {
+    return rc;
+  }
 
   filter_unit = new FilterUnit;
   if(condition.left_is_attr == 1){

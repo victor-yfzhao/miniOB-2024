@@ -102,6 +102,7 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
   unique_ptr<LogicalOperator> table_oper(nullptr);
   last_oper = &table_oper;
 
+  // inner join
   const std::vector<Table *> &tables = select_stmt->tables();
   for (Table *table : tables) {
 

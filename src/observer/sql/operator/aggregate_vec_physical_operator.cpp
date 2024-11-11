@@ -100,6 +100,7 @@ void AggregateVecPhysicalOperator::update_aggregate_state(void *state, const Col
 
 RC AggregateVecPhysicalOperator::next(Chunk &chunk)
 {
+  
   // your code here
   exit(-1);
 }
