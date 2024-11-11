@@ -100,7 +100,7 @@ FROM                                    RETURN_TOKEN(FROM);
 JOIN                                    RETURN_TOKEN(JOIN);
 INNER                                   RETURN_TOKEN(INNER);
 WHERE                                   RETURN_TOKEN(WHERE);
-IN                                      RETURN_TOKEN(IN);
+IN                                      RETURN_TOKEN(IN_SQL);
 EXISTS                                  RETURN_TOKEN(EXISTS);
 ORDER                                   RETURN_TOKEN(ORDER);
 ASC                                     RETURN_TOKEN(ASC);

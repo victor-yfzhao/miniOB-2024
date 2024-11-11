@@ -96,6 +96,10 @@ RC ExpressionBinder::bind_expression(unique_ptr<Expression> &expr, vector<unique
       ASSERT(false, "shouldn't be here");
     } break;
 
+    case ExprType::SUB_SELECT: {
+      return RC::SUCCESS;
+    } break;
+
     default: {
       LOG_WARN("unknown expression type: %d", static_cast<int>(expr->type()));
       return RC::INTERNAL;

@@ -40,12 +40,12 @@ public:
   static RC create(Db *db, const UpdateSqlNode &update_sql, Stmt *&stmt);
 
 public:
-  Table *table() const { return table_; }
-  const std::unordered_map<std::string, const Value *> &kv_pairs() const { return kv_pairs_; }
-  FilterStmt *filter_stmt() const { return filter_stmt_; }
+  Table                                                              *table() const { return table_; }
+  const std::unordered_map<std::string, std::shared_ptr<Expression>> &kv_pairs() const { return kv_pairs_; }
+  FilterStmt                                                         *filter_stmt() const { return filter_stmt_; }
 
 private:
-  Table                                         *table_       = nullptr;
-  std::unordered_map<std::string, const Value *> kv_pairs_;
-  FilterStmt                                    *filter_stmt_ = nullptr;
+  Table                                                        *table_       = nullptr;
+  std::unordered_map<std::string, std::shared_ptr<Expression>>  kv_pairs_;
+  FilterStmt                                                   *filter_stmt_ = nullptr;
 };

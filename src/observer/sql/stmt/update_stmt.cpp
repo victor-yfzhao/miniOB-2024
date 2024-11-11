@@ -18,6 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/db/db.h"
 #include "storage/table/table.h"
 #include "sql/parser/expression_binder.h"
+#include "sql/stmt/select_stmt.h"
 
 UpdateStmt::UpdateStmt(Table *table, FilterStmt *filter_stmt)
     : table_(table), filter_stmt_(filter_stmt) {}
@@ -62,9 +63,23 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
       return RC::SCHEMA_FIELD_NOT_EXIST;
     }
 
-    const Value *_value = new Value(kv_pair.value);
-
-    stmt_tmp->kv_pairs_.insert(std::pair<std::string, const Value *>(kv_pair.key, _value));
+    if (kv_pair.has_sub_select) {
+      Stmt *sub_select_stmt;
+      rc = SelectStmt::create(db, *kv_pair.sub_select, sub_select_stmt);
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to create sub select statement. rc=%d:%s", rc, strrc(rc));
+        return rc;
+      }
+      std::unique_ptr<Expression> sub_select_expr(new SubSelectExpr());
+      SubSelectExpr *sub_select_tmp_expr = static_cast<SubSelectExpr *>(sub_select_expr.get());
+      std::shared_ptr<SelectStmt> sub_select_stmt_shared(static_cast<SelectStmt *>(sub_select_stmt));
+      sub_select_tmp_expr->set_stmt(sub_select_stmt_shared);
+      stmt_tmp->kv_pairs_.insert(std::make_pair(kv_pair.key, std::move(sub_select_expr)));
+    }
+    else {
+      std::unique_ptr<Expression> value_expr(new ValueExpr(kv_pair.value));
+      stmt_tmp->kv_pairs_.insert(std::make_pair(kv_pair.key, std::move(value_expr)));
+    }
   }
   
   stmt = stmt_tmp;

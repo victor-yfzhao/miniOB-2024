@@ -299,10 +299,8 @@ RC PlainCommunicator::write_tuple_result(SqlResult *sql_result)
 
     int cell_num = tuple->cell_num();
 
-
-
     for (int i = 0; i < cell_num; i++) {
-      
+
       bool is_null_tag = false;
 
       for (int null_tag : null_tags) {
@@ -315,7 +313,7 @@ RC PlainCommunicator::write_tuple_result(SqlResult *sql_result)
       if(is_null_tag) {
         continue;
       }
-      
+
       if (i != 0) {
         const char *delim = " | ";
 

@@ -43,7 +43,37 @@ RC UpdatePhysicalOperator::open(Trx *trx)
     new_record.set_rid(record.rid().page_num, record.rid().slot_num);
 
     for (const auto &kv_pair : kv_pairs_) {
-      const Value     *value = kv_pair.second;
+      const Value *value;
+
+      if (kv_pair.second->type() == ExprType::VALUE) {
+        ValueExpr *value_expr = static_cast<ValueExpr *>(kv_pair.second.get());
+        value = &value_expr->get_value();
+      } 
+      else if (kv_pair.second->type() ==ExprType::SUB_SELECT) {
+        SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(kv_pair.second.get());
+        if (sub_select_expr->sub_select_result().empty()) {
+          RC rc_sub = sub_select_expr->set_sub_select_result();
+          if (rc_sub != RC::SUCCESS) {
+            LOG_WARN("failed to set sub select result: %s", strrc(rc_sub));
+            return rc_sub;
+          }
+        }
+
+        vector<Value> &sub_select_result = sub_select_expr->sub_select_result();
+
+        if (sub_select_result.size() != 1) {
+          LOG_WARN("sub select result size is not 1: %d", sub_select_result.size());
+          return RC::INTERNAL;
+        }
+
+        if (sub_select_result.size() == 0){
+          value = new Value(AttrType::NULLS, nullptr, 0);
+        }
+        else {
+          value = &sub_select_result[0];
+        }
+      }
+
 
       const FieldMeta *field = table_->table_meta().field(kv_pair.first.c_str());
       if (nullptr == field) {

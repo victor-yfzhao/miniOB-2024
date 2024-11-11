@@ -55,9 +55,12 @@ enum CompOp
   NOT_LIKE,     ///< "NOT LIKE"
   IS_NULL,      ///< "IS NULL"
   IS_NOT_NULL,  ///< "IS NOT NULL"
+  IN,           ///< "IN"
+  NOT_IN,       ///< "NOT IN"
   NO_OP
 };
 
+struct SelectSqlNode;
 /**
  * @brief 表示一个条件比较
  * @ingroup SQLParser
@@ -70,6 +73,13 @@ struct ConditionSqlNode
 {
   Expression*   left_expr;
   Expression*   right_expr;
+  SelectSqlNode* sub_select;
+
+  //to do const value
+  int right_is_const = 0;
+  std::vector<Value> values;
+
+  int has_sub_select;           ///< 0: no sub-select, 1: left part is sub-select, 2: right part is sub-select
   int left_is_expr;
   int right_is_expr;
   int left_is_val;
@@ -144,8 +154,10 @@ struct DeleteSqlNode
 
 struct KVPairNode
 {
-  std::string key;
-  Value       value;
+  std::string    key;
+  Value          value;
+  bool           has_sub_select = false;
+  SelectSqlNode *sub_select;
 };
 
 /**
