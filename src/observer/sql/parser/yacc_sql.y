@@ -888,22 +888,6 @@ condition:
       $$->values.emplace_back(*$4);
       $$->comp = $2;
     } 
-    /* | expression NOT IN_SQL LBRACE value value_list RBRACE {
-      $$ = new ConditionSqlNode;
-      if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
-      if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
-      $$->left_expr=$1;
-      $$->right_is_attr = 0;
-      $$->has_sub_select = 2;
-      $$->right_is_const = 1;
-      // 
-      if ($6 != nullptr) {
-        $$->values.swap(*$6);
-        delete $6;
-      }
-      $$->values.emplace_back(*$5);
-      $$->comp = NOT_IN;
-    } */
     | expression comp_op expression {
       $$ = new ConditionSqlNode;
       if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
@@ -915,7 +899,7 @@ condition:
       $$->comp = $2;
       $$->has_sub_select = 0;
     }
-    | rel_attr IS NULL_T
+    /* | rel_attr IS NULL_T
     {
       $$ = new ConditionSqlNode;
       $$->left_is_attr = 1;
@@ -962,7 +946,7 @@ condition:
       $$->has_sub_select = 0;
 
       delete $1;
-    }
+    } */
     ;
 
 comp_op:
@@ -976,6 +960,8 @@ comp_op:
     | NOT LIKE_SQL { $$ = NOT_LIKE; }
     | IN_SQL { $$ = IN; }
     | NOT IN_SQL { $$ = NOT_IN; }
+    | IS { $$ = IS_NULL; }
+    | IS NOT { $$ = IS_NOT_NULL; }
     ;
 
 // your code here
