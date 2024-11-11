@@ -13,7 +13,7 @@
 		{
 			"FIELD_id" : 1,
 			"len" : 4,
-			"name" : "num",
+			"name" : "age",
 			"nullable" : false,
 			"offset" : 4,
 			"type" : "ints",
@@ -31,6 +31,6 @@
 	],
 	"indexes" : null,
 	"storage_format" : 1,
-	"table_id" : 1,
+	"table_id" : 5,
 	"table_name" : "join_table_2"
 }
