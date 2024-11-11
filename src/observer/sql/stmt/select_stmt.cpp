@@ -38,43 +38,6 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     return RC::INVALID_ARGUMENT;
   }
 
-  SelectSqlNode *sub_select_node = select_sql.sub_select;
-  Stmt          *sub_select      = nullptr;
-  if (nullptr != sub_select_node) {
-    if (select_sql.conditions.size() != 1) {
-      LOG_WARN("sub select should have only one condition");
-      return RC::INVALID_ARGUMENT;
-    }
-
-    RelAttrSqlNode sub_select_field;
-    sub_select_field.relation_name = sub_select_node->relations[0];
-    if (sub_select_node->expressions.size() != 1) {
-      LOG_WARN("sub select should have only one field");
-      return RC::INVALID_ARGUMENT;
-    }
-    if (sub_select_node->expressions[0]->type() != ExprType::UNBOUND_FIELD && sub_select_node->expressions[0]->type() != ExprType::UNBOUND_AGGREGATION) {
-      LOG_WARN("sub select field should be a field");
-      return RC::INVALID_ARGUMENT;
-    }
-    sub_select_field.attribute_name = sub_select_node->expressions[0]->name();
-
-    if (select_sql.conditions[0].left_is_attr) {
-      select_sql.conditions[0].right_is_attr = 1;
-      select_sql.conditions[0].right_attr.relation_name = sub_select_field.relation_name;
-      select_sql.conditions[0].right_attr.attribute_name = sub_select_field.attribute_name;
-    }else{
-      select_sql.conditions[0].left_is_attr = 1;
-      select_sql.conditions[0].left_attr.relation_name = sub_select_field.relation_name;
-      select_sql.conditions[0].left_attr.attribute_name = sub_select_field.attribute_name;
-    }
-
-    RC rc_sub = SelectStmt::create(db, *sub_select_node, sub_select);
-    if (rc_sub != RC::SUCCESS) {
-      LOG_WARN("create sub select stmt failed. rc=%s", strrc(rc_sub));
-      return rc_sub;
-    }
-  }
-
   BinderContext binder_context;
 
   
@@ -168,7 +131,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
   select_stmt->query_expressions_.swap(bound_expressions);
   select_stmt->filter_stmt_ = filter_stmt;
   select_stmt->group_by_.swap(group_by_expressions);
-  select_stmt->sub_select_  = (SelectStmt*)sub_select;
+  //select_stmt->sub_select_  = (SelectStmt*)sub_select;
   stmt                      = select_stmt;
   return RC::SUCCESS;
 }

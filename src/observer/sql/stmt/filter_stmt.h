@@ -24,13 +24,16 @@ See the Mulan PSL v2 for more details. */
 class Db;
 class Table;
 class FieldMeta;
+class SelectStmt;
 
 struct FilterObj
 {
   bool  is_attr;
   bool  is_expr = false;
+  bool  is_sub_select = false;
   Field field;
   Value value;
+  // SelectStmt *sub_select = nullptr;
   unique_ptr<Expression> expr;
   
   FilterObj() = default;
@@ -66,6 +69,14 @@ struct FilterObj
     is_expr = true;
     this->expr = std::move(expr);
   }
+
+  // void init_sub_select(SelectStmt *sub_select)
+  // {
+  //   is_attr = false;
+  //   is_expr = false;
+  //   is_sub_select = true;
+  //   this->sub_select = sub_select;
+  // }
 };
 
 class FilterUnit

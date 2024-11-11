@@ -66,7 +66,6 @@ public:
 
   int operator()(const char *v1, const char *v2) const
   {
-    // TODO: optimized the comparison
     Value left;
     left.set_type(attr_type_);
     left.set_data(v1, attr_length_);
@@ -98,8 +97,11 @@ public:
   const AttrComparator &attr_comparator() const { return attr_comparator_; }
   const bool           unique() const { return unique_; }
 
-  int operator()(const char *v1, const char *v2) const///////////////////////////////////////////////////////////////////////////////add UNIQUE check
+  int operator()(const char *v1, const char *v2) const
   {
+    if (0 == strcmp("", v1) && 0 == strcmp("", v2)) {
+      return 1;
+    }
     int result = attr_comparator_(v1, v2);
     if (result != 0 || unique_) {
       return result;

@@ -113,14 +113,18 @@ RC FloatType::cast_to(const Value&val, AttrType type , Value &result) const
   switch (type)
   {
   case AttrType::INTS:{
-    result.set_int((int)val.get_float());
+    result.set_int(val.get_float());
     break;
   }
   case AttrType::CHARS:{
-    return RC::UNIMPLEMENTED;
+    string str;
+    RC rc = to_string(val, str);
+    if (rc != RC::SUCCESS) {
+      return rc;
+    }
+    result.set_string(str.c_str());
   }
     break;
-  
   default:
   return RC::INVALID_ARGUMENT;
   }

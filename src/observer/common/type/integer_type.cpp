@@ -106,5 +106,14 @@ RC IntegerType::cast_to(const Value&val, AttrType type , Value &result) const
     result.set_float(val.get_int());
     return RC::SUCCESS;
   }
+  else if (type == AttrType::CHARS){
+    string str;
+    RC rc = to_string(val, str);
+    if(rc != RC::SUCCESS){
+      return rc;
+    }
+    result.set_string(str.c_str(), str.length());
+    return RC::SUCCESS;
+  }
   return RC::UNSUPPORTED;
 }

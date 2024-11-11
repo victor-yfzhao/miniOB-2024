@@ -125,7 +125,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         JOIN
         INNER
         WHERE
-        IN
+        IN_SQL
         EXISTS
         ORDER
         ASC
@@ -637,102 +637,18 @@ kv_pair:
       free($1);
       delete $3;
     }
+    | ID EQ LBRACE select_stmt RBRACE
+    {
+      $$ = new KVPairNode;
+      $$->key = $1;
+      $$->sub_select = &$4->selection;
+      $$->has_sub_select = true;
+      free($1);
+    }
     ;
   
 select_stmt:        /*  select 语句的语法解析树*/
-    /* SELECT expression_list FROM rel_list WHERE rel_attr IN LBRACE select_stmt RBRACE
-    {
-      $$ = new ParsedSqlNode(SCF_SELECT);
-      if ($2 != nullptr) {
-        $$->selection.expressions.swap(*$2);
-        delete $2;
-      }
-
-      if ($4 != nullptr) {
-        $$->selection.relations.swap(*$4);
-        delete $4;
-      }
-
-      ConditionSqlNode *node = new ConditionSqlNode;
-      node->left_is_attr = 1;
-      node->left_attr = *$6;
-      node->comp = EQUAL_TO;
-      $$->selection.conditions.push_back(*node);
-
-      if ($9 != nullptr) {
-        $$->selection.sub_select=&$9->selection;
-      }
-    }
-    | SELECT expression_list FROM rel_list WHERE rel_attr NOT IN LBRACE select_stmt RBRACE
-    {
-      $$ = new ParsedSqlNode(SCF_SELECT);
-      if ($2 != nullptr) {
-        $$->selection.expressions.swap(*$2);
-        delete $2;
-      }
-
-      if ($4 != nullptr) {
-        $$->selection.relations.swap(*$4);
-        delete $4;
-      }
-
-      ConditionSqlNode *node = new ConditionSqlNode;
-      node->left_is_attr = 1;
-      node->left_attr = *$6;
-      node->comp = NOT_EQUAL;
-      $$->selection.conditions.push_back(*node);
-
-      if ($10 != nullptr) {
-        $$->selection.sub_select=&$10->selection;
-      }
-    }
-    | SELECT expression_list FROM rel_list WHERE rel_attr comp_op LBRACE select_stmt RBRACE
-    {
-      $$ = new ParsedSqlNode(SCF_SELECT);
-      if ($2 != nullptr) {
-        $$->selection.expressions.swap(*$2);
-        delete $2;
-      }
-
-      if ($4 != nullptr) {
-        $$->selection.relations.swap(*$4);
-        delete $4;
-      }
-
-      ConditionSqlNode *node = new ConditionSqlNode;
-      node->left_is_attr = 1;
-      node->left_attr = *$6;
-      node->comp = $7;
-      $$->selection.conditions.push_back(*node);
-
-      if ($9 != nullptr) {
-        $$->selection.sub_select=&$9->selection;
-      }
-    }
-    |SELECT expression_list FROM rel_list WHERE LBRACE select_stmt RBRACE comp_op rel_attr
-    {
-      $$ = new ParsedSqlNode(SCF_SELECT);
-      if ($2 != nullptr) {
-        $$->selection.expressions.swap(*$2);
-        delete $2;
-      }
-
-      if ($4 != nullptr) {
-        $$->selection.relations.swap(*$4);
-        delete $4;
-      }
-
-      ConditionSqlNode *node = new ConditionSqlNode;
-      node->right_is_attr = 1;
-      node->right_attr = *$10;
-      node->comp = $9;
-      $$->selection.conditions.push_back(*node);
-
-      if ($7 != nullptr) {
-        $$->selection.sub_select=&$7->selection;
-      }
-    } 
-    |*/ SELECT expression_list FROM rel_list inner_join_list where group_by having
+    SELECT expression_list FROM rel_list inner_join_list where group_by having 
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
       if ($2 != nullptr) {
@@ -805,10 +721,10 @@ expression:
     | expression '/' expression {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::DIV, $1, $3, sql_string, &@$);
     }
-    | LBRACE expression RBRACE {
+    /* | LBRACE expression RBRACE {
       $$ = $2;
       $$->set_name(token_name(sql_string, &@$));
-    }
+    } */
     | '-' expression %prec UMINUS {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $2, nullptr, sql_string, &@$);
     }
@@ -947,7 +863,46 @@ condition_list:
     }
     ;
 condition:
-    expression comp_op expression {
+     expression comp_op LBRACE select_stmt RBRACE {
+      $$ = new ConditionSqlNode;
+      if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
+      if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
+      $$->left_expr=$1;
+      $$->right_is_attr = 0;
+      $$->has_sub_select = 2;
+      $$->sub_select = &$4->selection;
+      $$->comp = $2;
+    } 
+    
+    | 
+    LBRACE select_stmt RBRACE comp_op expression { 
+      $$ = new ConditionSqlNode;
+      $$->left_is_attr = 0;
+      $$->has_sub_select = 1;
+      $$->sub_select = &$2->selection;
+      if($5->type()==ExprType::UNBOUND_FIELD){$$->right_is_attr = 1;}
+      if($5->type()==ExprType::VALUE){$$->right_is_val = 1;}
+      $$->right_expr=$5;
+      $$->comp = $4;
+    } 
+    // const value
+    | expression comp_op LBRACE value value_list RBRACE {
+      $$ = new ConditionSqlNode;
+      if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
+      if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
+      $$->left_expr=$1;
+      $$->right_is_attr = 0;
+      $$->has_sub_select = 2;
+      $$->right_is_const = 1;
+      // 
+      if ($5 != nullptr) {
+        $$->values.swap(*$5);
+        delete $5;
+      }
+      $$->values.emplace_back(*$4);
+      $$->comp = $2;
+    } 
+    | expression comp_op expression {
       $$ = new ConditionSqlNode;
       if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
       if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
@@ -956,8 +911,9 @@ condition:
       if($3->type()==ExprType::VALUE){$$->right_is_val = 1;}
       $$->right_expr=$3;
       $$->comp = $2;
+      $$->has_sub_select = 0;
     }
-    | rel_attr IS NULL_T
+    /* | rel_attr IS NULL_T
     {
       $$ = new ConditionSqlNode;
       $$->left_is_attr = 1;
@@ -965,6 +921,7 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
     }
@@ -976,6 +933,7 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NOT_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
     }
@@ -987,6 +945,7 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
     }
@@ -998,9 +957,10 @@ condition:
       $$->right_is_attr = 0;
       $$->right_value = Value(AttrType::NULLS, nullptr, 0);
       $$->comp = IS_NOT_NULL;
+      $$->has_sub_select = 0;
 
       delete $1;
-    }
+    } */
     ;
 
 comp_op:
@@ -1012,6 +972,10 @@ comp_op:
     | NE { $$ = NOT_EQUAL; }
     | LIKE_SQL { $$ = LIKE; }
     | NOT LIKE_SQL { $$ = NOT_LIKE; }
+    | IN_SQL { $$ = IN; }
+    | NOT IN_SQL { $$ = NOT_IN; }
+    | IS { $$ = IS_NULL; }
+    | IS NOT { $$ = IS_NOT_NULL; }
     ;
 having:
     /* empty */
@@ -1023,7 +987,6 @@ having:
       $$ = $2; // 返回 expression_list
     }
     ;
-
 // your code here
 
 inner_join_list:
