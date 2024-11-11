@@ -94,10 +94,18 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   vector<unique_ptr<Expression>> filter_expressions;
 
   unique_ptr<Expression> left_expression(condition.left_expr);
-  expression_binder.bind_expression(left_expression, filter_expressions);
+  rc = expression_binder.bind_expression(left_expression, filter_expressions);
+  if(OB_FAIL(rc)){
+    LOG_WARN("no such field in table ");
+    return rc;
+  }
 
   unique_ptr<Expression> right_expression(condition.right_expr);
-  expression_binder.bind_expression(right_expression, filter_expressions);
+  rc = expression_binder.bind_expression(right_expression, filter_expressions);
+  if(OB_FAIL(rc)){
+    LOG_WARN("no such field in table ");
+    return rc;
+  }
 
   filter_unit = new FilterUnit;
   if(condition.left_is_attr == 1){

@@ -1044,7 +1044,8 @@ inner_join:
       $$ = new innerjoinSqlNode;
       $$->relation  =  $3;
       $$->condition = *$5;
-
+      $$->condition.left_is_attr = 1;
+      $$->condition.right_is_attr = 1;
     }
     ;
 group_by:
