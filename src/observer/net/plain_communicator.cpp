@@ -283,15 +283,14 @@ RC PlainCommunicator::write_tuple_result(SqlResult *sql_result)
   const TupleSchema &schema   = sql_result->tuple_schema();
   const int          _cell_num = schema.cell_num();
 
-  bool has_null_tag = false;
+  vector<int> null_tags;
 
   for (int i = 0; i < _cell_num; i++) {
     const TupleCellSpec &spec  = schema.cell_at(i);
     const char          *alias = spec.alias();
     
     if(0 == strcmp(alias, "_null_tag")) {
-      has_null_tag = true;
-      break;
+      null_tags.push_back(i);
     }
   }
 
@@ -300,9 +299,23 @@ RC PlainCommunicator::write_tuple_result(SqlResult *sql_result)
 
     int cell_num = tuple->cell_num();
 
-    if (has_null_tag) cell_num--;
+
 
     for (int i = 0; i < cell_num; i++) {
+      
+      bool is_null_tag = false;
+
+      for (int null_tag : null_tags) {
+        if (i == null_tag) {
+          is_null_tag = true;
+          break;
+        }
+      }
+
+      if(is_null_tag) {
+        continue;
+      }
+      
       if (i != 0) {
         const char *delim = " | ";
 
