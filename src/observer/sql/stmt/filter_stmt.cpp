@@ -76,6 +76,7 @@ RC get_table_and_field(Db *db, Table *default_table, std::unordered_map<std::str
     return RC::SCHEMA_FIELD_NOT_EXIST;
   }
 
+
   return RC::SUCCESS;
 }
 
