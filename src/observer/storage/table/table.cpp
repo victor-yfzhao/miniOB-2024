@@ -742,20 +742,6 @@ RC Table::insert_entry_of_indexes(const char *record, const RID &rid, Trx *trx)
       rc = insert_into_multi_index(record, rid, (MultiIndex*)index, trx);
     }
     else {
-      const FieldMeta *null_tag_field = table_meta_.field("_null_tag");
-      if (null_tag_field != nullptr) {
-        string null_tag_value(record + null_tag_field->offset(), null_tag_field->len());
-
-        const char * __field = index->index_meta().field();
-        const FieldMeta *field = table_meta_.field(__field);
-
-        int field_id = field->field_id() - table_meta_.sys_field_num();
-
-        if (null_tag_value[field_id] == '1') {
-          continue;
-        }
-      }
-
       rc = index->insert_entry(record, &rid);
     }
 
