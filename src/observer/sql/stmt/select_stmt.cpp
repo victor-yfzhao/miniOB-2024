@@ -118,8 +118,11 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     binder_context.add_table(table);
     tables.push_back(table);
     table_map.insert({table_name, table});
+    for ( ConditionSqlNode condition : tmp.conditions){
+      select_sql.conditions.emplace_back(condition);
+    }
 
-    select_sql.conditions.emplace_back(tmp.condition);
+    
   }
 
   // collect query fields in `select` statement

@@ -1038,14 +1038,12 @@ inner_join_list:
     }
     ;
 inner_join:
-    INNER JOIN relation ON condition
+    INNER JOIN relation ON condition_list
     {
       // 创建并填充 innerjoinSqlNode
       $$ = new innerjoinSqlNode;
       $$->relation  =  $3;
-      $$->condition = *$5;
-      $$->condition.left_is_attr = 1;
-      $$->condition.right_is_attr = 1;
+      $$->conditions.swap(*$5);
     }
     ;
 group_by:
