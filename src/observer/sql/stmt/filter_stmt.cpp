@@ -124,12 +124,12 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   }
 
   rc = expression_binder.bind_expression(left_expression, filter_expressions);
-  if (rc != RC::SUCCESS) {
+  if (rc == RC::SCHEMA_FIELD_MISSING) {
     return rc;
   }
   
   rc = expression_binder.bind_expression(right_expression, filter_expressions);
-  if (rc != RC::SUCCESS) {
+  if (rc == RC::SCHEMA_FIELD_MISSING) {
     return rc;
   }
 
