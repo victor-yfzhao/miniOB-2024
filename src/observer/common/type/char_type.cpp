@@ -100,6 +100,7 @@ RC CharType::cast_to(const Value &val, AttrType type, Value &result) const
     case AttrType::INTS: {
       return DataType::type_instance(AttrType::INTS)->set_value_from_str(result,val.get_string());
     } 
+      break;
     default: return RC::UNIMPLEMENTED;
   }
   return RC::SUCCESS;
