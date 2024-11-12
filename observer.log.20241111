@@ -1923,3 +1923,172 @@ Finish dump configuration
 [2024-11-11 19:50:10.903319 pid:15824 tid:718aa94987c0 ctx:0 INFO: ~Db@db.cpp:48] >> Db has been closed: sys
 [2024-11-11 19:50:10.911963 pid:15824 tid:718aa94987c0 ctx:0 INFO: cleanup@mem_pool.h:217] >> Successfully do cleanup, this->name:BufPool.
 [2024-11-11 19:50:10.914472 pid:15824 tid:718aa94987c0 ctx:0 INFO: cleanup_util@init.cpp:229] >> Shutdown Cleanly!
+[2024-11-11 21:00:43.970012 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@init.cpp:200] >> Output configuration 
+Begin dump configuration
+[]
+
+Finish dump configuration 
+
+[2024-11-11 21:00:43.971355 pid:36062 tid:718c8148e7c0 ctx:0 WARN: create_db@default_handler.cpp:93] >> Db already exists: sys
+[2024-11-11 21:00:43.972472 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:128, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.973640 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:256, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.974115 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:384, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.974470 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:512, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.974911 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:640, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.975267 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:768, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.975746 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:896, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.976101 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:1024, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.976386 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:1152, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.976680 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:1280, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.977014 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:1408, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.977297 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:1536, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.977812 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:1664, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.978056 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:1792, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.978447 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:1920, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.978797 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:2048, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.979291 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:2176, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.979717 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:2304, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.980052 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:2432, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.980361 pid:36062 tid:718c8148e7c0 ctx:0 INFO: extend@mem_pool.h:244] >> Extend one pool, this->size:2560, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.980440 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@mem_pool.h:191] >> Extend one pool, this->size:2560, item_num_per_pool:128, this->name:BufPool.
+[2024-11-11 21:00:43.980536 pid:36062 tid:718c8148e7c0 ctx:0 INFO: BufferPoolManager@disk_buffer_pool.cpp:771] >> buffer pool manager init with memory size 20971520, page num: 2560, pool num: 20
+[2024-11-11 21:00:43.980866 pid:36062 tid:718c8148e7c0 ctx:0 INFO: load_pages@double_write_buffer.cpp:290] >> double write buffer load pages done. page num=6
+[2024-11-11 21:00:43.981227 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init_meta@db.cpp:354] >> Successfully read db meta file. db=sys, file=miniob/db/sys/sys.db, check_point_lsn=0
+[2024-11-11 21:00:43.982406 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=id
+[2024-11-11 21:00:43.983517 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=num_empty_1
+[2024-11-11 21:00:43.983574 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=_null_tag
+[2024-11-11 21:00:43.983698 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_file@disk_buffer_pool.cpp:234] >> Successfully open buffer pool file miniob/db/sys/join_table_empty_1.data.
+[2024-11-11 21:00:43.984604 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_file@disk_buffer_pool.cpp:272] >> Successfully open miniob/db/sys/join_table_empty_1.data. file_desc=5, hdr_frame=0x718c804fa808, file header=pageCount:1, allocatedCount:1
+[2024-11-11 21:00:43.984893 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init_free_pages@record_manager.cpp:539] >> record file handler init free pages done. free page num=0, rc=SUCCESS
+[2024-11-11 21:00:43.984952 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@record_manager.cpp:498] >> open record file handle done. rc=SUCCESS
+[2024-11-11 21:00:43.985016 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_all_tables@db.cpp:234] >> Open table: join_table_empty_1, file: join_table_empty_1.table
+[2024-11-11 21:00:43.985619 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=id
+[2024-11-11 21:00:43.985659 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=num2
+[2024-11-11 21:00:43.985702 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=_null_tag
+[2024-11-11 21:00:43.985745 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_file@disk_buffer_pool.cpp:234] >> Successfully open buffer pool file miniob/db/sys/join_table_3.data.
+[2024-11-11 21:00:43.989050 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_file@disk_buffer_pool.cpp:272] >> Successfully open miniob/db/sys/join_table_3.data. file_desc=6, hdr_frame=0x718c804fc898, file header=pageCount:1, allocatedCount:1
+[2024-11-11 21:00:43.989136 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init_free_pages@record_manager.cpp:539] >> record file handler init free pages done. free page num=0, rc=SUCCESS
+[2024-11-11 21:00:43.989153 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@record_manager.cpp:498] >> open record file handle done. rc=SUCCESS
+[2024-11-11 21:00:43.989169 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_all_tables@db.cpp:234] >> Open table: join_table_3, file: join_table_3.table
+[2024-11-11 21:00:43.989771 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=id
+[2024-11-11 21:00:43.989812 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=num_empty_2
+[2024-11-11 21:00:43.989830 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=_null_tag
+[2024-11-11 21:00:43.989911 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_file@disk_buffer_pool.cpp:234] >> Successfully open buffer pool file miniob/db/sys/join_table_empty_2.data.
+[2024-11-11 21:00:43.990403 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_file@disk_buffer_pool.cpp:272] >> Successfully open miniob/db/sys/join_table_empty_2.data. file_desc=7, hdr_frame=0x718c804fe928, file header=pageCount:1, allocatedCount:1
+[2024-11-11 21:00:43.990461 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init_free_pages@record_manager.cpp:539] >> record file handler init free pages done. free page num=0, rc=SUCCESS
+[2024-11-11 21:00:43.990548 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@record_manager.cpp:498] >> open record file handle done. rc=SUCCESS
+[2024-11-11 21:00:43.990574 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_all_tables@db.cpp:234] >> Open table: join_table_empty_2, file: join_table_empty_2.table
+[2024-11-11 21:00:43.991743 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=id
+[2024-11-11 21:00:43.991818 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=name
+[2024-11-11 21:00:43.991868 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=_null_tag
+[2024-11-11 21:00:43.992160 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_file@disk_buffer_pool.cpp:234] >> Successfully open buffer pool file miniob/db/sys/join_table_1.data.
+[2024-11-11 21:00:43.992248 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_file@disk_buffer_pool.cpp:272] >> Successfully open miniob/db/sys/join_table_1.data. file_desc=8, hdr_frame=0x718c805009b8, file header=pageCount:2, allocatedCount:2
+[2024-11-11 21:00:43.992656 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init_free_pages@record_manager.cpp:539] >> record file handler init free pages done. free page num=1, rc=SUCCESS
+[2024-11-11 21:00:43.994126 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@record_manager.cpp:498] >> open record file handle done. rc=SUCCESS
+[2024-11-11 21:00:43.994167 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_all_tables@db.cpp:234] >> Open table: join_table_1, file: join_table_1.table
+[2024-11-11 21:00:43.994357 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=id
+[2024-11-11 21:00:43.994593 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=num
+[2024-11-11 21:00:43.994635 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@field_meta.cpp:59] >> Init a field with name=_null_tag
+[2024-11-11 21:00:43.994696 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_file@disk_buffer_pool.cpp:234] >> Successfully open buffer pool file miniob/db/sys/join_table_2.data.
+[2024-11-11 21:00:43.994766 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_file@disk_buffer_pool.cpp:272] >> Successfully open miniob/db/sys/join_table_2.data. file_desc=9, hdr_frame=0x718c80504ad8, file header=pageCount:1, allocatedCount:1
+[2024-11-11 21:00:43.994808 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init_free_pages@record_manager.cpp:539] >> record file handler init free pages done. free page num=0, rc=SUCCESS
+[2024-11-11 21:00:43.994826 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@record_manager.cpp:498] >> open record file handle done. rc=SUCCESS
+[2024-11-11 21:00:43.994845 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_all_tables@db.cpp:234] >> Open table: join_table_2, file: join_table_2.table
+[2024-11-11 21:00:43.994860 pid:36062 tid:718c8148e7c0 ctx:0 INFO: open_all_tables@db.cpp:237] >> All table have been opened. num=5
+[2024-11-11 21:00:44.003907 pid:36062 tid:718c8148e7c0 ctx:0 INFO: recover@db.cpp:318] >> Successfully recover db. db=sys checkpoint_lsn=0
+[2024-11-11 21:00:44.004151 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@default_handler.cpp:69] >> Default handler init with miniob success
+[2024-11-11 21:00:44.004267 pid:36062 tid:718c8148e7c0 ctx:0 INFO: init@init.cpp:215] >> Successfully init utility
+[2024-11-11 21:00:44.004396 pid:36062 tid:718c8148e7c0 ctx:0 INFO: start_tcp_server@server.cpp:194] >> Listen on port 6789
+[2024-11-11 21:00:44.004413 pid:36062 tid:718c8148e7c0 ctx:0 INFO: start_tcp_server@server.cpp:197] >> Observer start success
+[2024-11-11 21:01:04.480554 pid:36062 tid:718c8148e7c0 ctx:0 INFO: accept@server.cpp:129] >> Accepted connection from 127.0.0.1:37518
+
+[2024-11-11 21:01:04.482355 pid:36062 tid:718c7b800640 ctx:0 INFO: operator()@one_thread_per_connection_thread_handler.cpp:70] >> worker thread start. communicator = 0x60b0000009e0
+[2024-11-11 21:01:07.000516 pid:36062 tid:718c7b800640 ctx:0 INFO: read_event@plain_communicator.cpp:89] >> receive command(size=13): show tables
+
+[2024-11-11 21:01:07.001315 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: handle_event@sql_task_handler.cpp:46] >> write result return SUCCESS
+[2024-11-11 21:03:54.555178 pid:36062 tid:718c7b800640 ctx:0 INFO: read_event@plain_communicator.cpp:89] >> receive command(size=45): INSERT INTO join_table_1 VALUES (4, '16a');
+
+[2024-11-11 21:03:54.556614 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: generate_physical_plan@optimize_stage.cpp:85] >> use tuple iterator
+[2024-11-11 21:03:54.557296 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: handle_event@sql_task_handler.cpp:46] >> write result return SUCCESS
+[2024-11-11 21:04:04.979406 pid:36062 tid:718c7b800640 ctx:0 INFO: read_event@plain_communicator.cpp:89] >> receive command(size=127): Select * from join_table_1 inner join join_table_2 on join_table_1.name<join_table_2.age and join_table_1.id=join_table_2.id;
+
+[2024-11-11 21:04:04.980927 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: get_table_and_field@filter_stmt.cpp:83] >> No such table: attr.relation_name: 
+[2024-11-11 21:04:04.981414 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: get_table_and_field@filter_stmt.cpp:83] >> No such table: attr.relation_name: 
+[2024-11-11 21:04:04.982267 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: bind_unbound_field_expression@expression_binder.cpp:176] >> no such field in table: join_table_2.age
+[2024-11-11 21:04:04.983073 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: create@filter_stmt.cpp:59] >> failed to create filter unit. condition index=1
+[2024-11-11 21:04:04.983600 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: create@select_stmt.cpp:127] >> cannot construct filter stmt
+[2024-11-11 21:04:04.984431 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: handle_request@resolve_stage.cpp:51] >> failed to create stmt. rc=28:SCHEMA_FIELD_MISSING
+[2024-11-11 21:04:04.984670 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: handle_event@sql_task_handler.cpp:46] >> write result return SUCCESS
+[2024-11-11 21:04:07.599545 pid:36062 tid:718c7b800640 ctx:0 INFO: read_event@plain_communicator.cpp:89] >> receive command(size=127): Select * from join_table_1 inner join join_table_2 on join_table_1.name<join_table_2.age and join_table_1.id=join_table_2.id;
+
+[2024-11-11 21:04:07.600053 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: get_table_and_field@filter_stmt.cpp:83] >> No such table: attr.relation_name: 
+[2024-11-11 21:04:07.600347 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: get_table_and_field@filter_stmt.cpp:83] >> No such table: attr.relation_name: 
+[2024-11-11 21:04:07.600709 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: bind_unbound_field_expression@expression_binder.cpp:176] >> no such field in table: join_table_2.age
+[2024-11-11 21:04:07.600906 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: create@filter_stmt.cpp:59] >> failed to create filter unit. condition index=1
+[2024-11-11 21:04:07.600976 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: create@select_stmt.cpp:127] >> cannot construct filter stmt
+[2024-11-11 21:04:07.600996 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: handle_request@resolve_stage.cpp:51] >> failed to create stmt. rc=28:SCHEMA_FIELD_MISSING
+[2024-11-11 21:04:07.601092 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: handle_event@sql_task_handler.cpp:46] >> write result return SUCCESS
+[2024-11-11 21:04:08.468371 pid:36062 tid:718c7b800640 ctx:0 INFO: read_event@plain_communicator.cpp:89] >> receive command(size=127): Select * from join_table_1 inner join join_table_2 on join_table_1.name<join_table_2.age and join_table_1.id=join_table_2.id;
+
+[2024-11-11 21:04:08.469068 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: get_table_and_field@filter_stmt.cpp:83] >> No such table: attr.relation_name: 
+[2024-11-11 21:04:08.469143 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: get_table_and_field@filter_stmt.cpp:83] >> No such table: attr.relation_name: 
+[2024-11-11 21:04:08.469229 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: bind_unbound_field_expression@expression_binder.cpp:176] >> no such field in table: join_table_2.age
+[2024-11-11 21:04:08.469250 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: create@filter_stmt.cpp:59] >> failed to create filter unit. condition index=1
+[2024-11-11 21:04:08.469262 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: create@select_stmt.cpp:127] >> cannot construct filter stmt
+[2024-11-11 21:04:08.469277 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: handle_request@resolve_stage.cpp:51] >> failed to create stmt. rc=28:SCHEMA_FIELD_MISSING
+[2024-11-11 21:04:08.469463 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: handle_event@sql_task_handler.cpp:46] >> write result return SUCCESS
+[2024-11-11 21:04:11.075581 pid:36062 tid:718c7b800640 ctx:0 INFO: read_event@plain_communicator.cpp:89] >> receive command(size=127): Select * from join_table_1 inner join join_table_2 on join_table_1.name<join_table_2.age and join_table_1.id=join_table_2.id;
+
+[2024-11-11 21:04:11.076073 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: get_table_and_field@filter_stmt.cpp:83] >> No such table: attr.relation_name: 
+[2024-11-11 21:04:11.076713 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: get_table_and_field@filter_stmt.cpp:83] >> No such table: attr.relation_name: 
+[2024-11-11 21:04:11.077192 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: bind_unbound_field_expression@expression_binder.cpp:176] >> no such field in table: join_table_2.age
+[2024-11-11 21:04:11.077241 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: create@filter_stmt.cpp:59] >> failed to create filter unit. condition index=1
+[2024-11-11 21:04:11.077421 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: create@select_stmt.cpp:127] >> cannot construct filter stmt
+[2024-11-11 21:04:11.077443 pid:36062 tid:718c7b800640 ctx:603000020860 WARN: handle_request@resolve_stage.cpp:51] >> failed to create stmt. rc=28:SCHEMA_FIELD_MISSING
+[2024-11-11 21:04:11.077506 pid:36062 tid:718c7b800640 ctx:603000020860 INFO: handle_event@sql_task_handler.cpp:46] >> write result return SUCCESS
+[2024-11-11 21:04:17.385445 pid:36062 tid:718c7ae00640 ctx:0 INFO: quit_thread_func@main.cpp:153] >> Receive signal: 2
+[2024-11-11 21:04:17.385445 pid:36062 tid:718c8148e7c0 ctx:0 WARN: serve@server.cpp:273] >> [listen socket] poll error. fd = 10, ret = -1, error=Interrupted system call
+[2024-11-11 21:04:17.385810 pid:36062 tid:718c7ae00640 ctx:0 INFO: shutdown@server.cpp:301] >> NetServer shutting down
+[2024-11-11 21:04:17.385821 pid:36062 tid:718c8148e7c0 ctx:0 INFO: await_stop@one_thread_per_connection_thread_handler.cpp:170] >> begin to await stop one thread per connection thread handler
+[2024-11-11 21:04:17.643939 pid:36062 tid:718c7b800640 ctx:0 INFO: operator()@one_thread_per_connection_thread_handler.cpp:103] >> worker thread stop. communicator = 0x60b0000009e0
+[2024-11-11 21:04:17.644582 pid:36062 tid:718c7b800640 ctx:0 INFO: close_connection@one_thread_per_connection_thread_handler.cpp:154] >> close connection. communicator = 0x60b0000009e0
+[2024-11-11 21:04:17.708265 pid:36062 tid:718c8148e7c0 ctx:0 INFO: await_stop@one_thread_per_connection_thread_handler.cpp:174] >> end to await stop one thread per connection thread handler
+[2024-11-11 21:04:17.708801 pid:36062 tid:718c8148e7c0 ctx:0 INFO: await_stop@one_thread_per_connection_thread_handler.cpp:170] >> begin to await stop one thread per connection thread handler
+[2024-11-11 21:04:17.708874 pid:36062 tid:718c8148e7c0 ctx:0 INFO: await_stop@one_thread_per_connection_thread_handler.cpp:174] >> end to await stop one thread per connection thread handler
+[2024-11-11 21:04:17.708911 pid:36062 tid:718c8148e7c0 ctx:0 INFO: serve@server.cpp:295] >> NetServer quit
+[2024-11-11 21:04:17.708926 pid:36062 tid:718c8148e7c0 ctx:0 INFO: main@main.cpp:200] >> Server stopped
+[2024-11-11 21:04:17.709059 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@table.cpp:940] >> Sync table over. table=join_table_2
+[2024-11-11 21:04:17.709075 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@db.cpp:261] >> Successfully sync table db:sys, table:join_table_2.
+[2024-11-11 21:04:17.709242 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@table.cpp:940] >> Sync table over. table=join_table_1
+[2024-11-11 21:04:17.709257 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@db.cpp:261] >> Successfully sync table db:sys, table:join_table_1.
+[2024-11-11 21:04:17.709321 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@table.cpp:940] >> Sync table over. table=join_table_empty_2
+[2024-11-11 21:04:17.709334 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@db.cpp:261] >> Successfully sync table db:sys, table:join_table_empty_2.
+[2024-11-11 21:04:17.709391 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@table.cpp:940] >> Sync table over. table=join_table_3
+[2024-11-11 21:04:17.709411 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@db.cpp:261] >> Successfully sync table db:sys, table:join_table_3.
+[2024-11-11 21:04:17.709527 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@table.cpp:940] >> Sync table over. table=join_table_empty_1
+[2024-11-11 21:04:17.709542 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@db.cpp:261] >> Successfully sync table db:sys, table:join_table_empty_1.
+[2024-11-11 21:04:17.714251 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@db.cpp:266] >> double write buffer flush pages ret=SUCCESS
+[2024-11-11 21:04:17.716971 pid:36062 tid:718c8148e7c0 ctx:0 INFO: flush_meta@db.cpp:399] >> Successfully write db meta file. db=sys, file=miniob/db/sys/sys.db.tmp, check_point_lsn=0
+[2024-11-11 21:04:17.717457 pid:36062 tid:718c8148e7c0 ctx:0 INFO: sync@db.cpp:285] >> Successfully sync db. db=sys
+[2024-11-11 21:04:17.717859 pid:36062 tid:718c8148e7c0 ctx:0 INFO: clear_pages@double_write_buffer.cpp:213] >> clear pages in double write buffer. file name=miniob/db/sys/join_table_2.data, page count=0
+[2024-11-11 21:04:17.718195 pid:36062 tid:718c8148e7c0 ctx:0 INFO: close_file@disk_buffer_pool.cpp:305] >> Successfully close file 9:miniob/db/sys/join_table_2.data.
+[2024-11-11 21:04:17.718378 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~DiskBufferPool@disk_buffer_pool.cpp:224] >> disk buffer pool exit
+[2024-11-11 21:04:17.718823 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~Table@table.cpp:52] >> Table has been closed: join_table_2
+[2024-11-11 21:04:17.718910 pid:36062 tid:718c8148e7c0 ctx:0 INFO: clear_pages@double_write_buffer.cpp:213] >> clear pages in double write buffer. file name=miniob/db/sys/join_table_1.data, page count=0
+[2024-11-11 21:04:17.719154 pid:36062 tid:718c8148e7c0 ctx:0 INFO: close_file@disk_buffer_pool.cpp:305] >> Successfully close file 8:miniob/db/sys/join_table_1.data.
+[2024-11-11 21:04:17.719483 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~DiskBufferPool@disk_buffer_pool.cpp:224] >> disk buffer pool exit
+[2024-11-11 21:04:17.719758 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~Table@table.cpp:52] >> Table has been closed: join_table_1
+[2024-11-11 21:04:17.720021 pid:36062 tid:718c8148e7c0 ctx:0 INFO: clear_pages@double_write_buffer.cpp:213] >> clear pages in double write buffer. file name=miniob/db/sys/join_table_empty_2.data, page count=0
+[2024-11-11 21:04:17.720373 pid:36062 tid:718c8148e7c0 ctx:0 INFO: close_file@disk_buffer_pool.cpp:305] >> Successfully close file 7:miniob/db/sys/join_table_empty_2.data.
+[2024-11-11 21:04:17.720687 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~DiskBufferPool@disk_buffer_pool.cpp:224] >> disk buffer pool exit
+[2024-11-11 21:04:17.720754 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~Table@table.cpp:52] >> Table has been closed: join_table_empty_2
+[2024-11-11 21:04:17.720981 pid:36062 tid:718c8148e7c0 ctx:0 INFO: clear_pages@double_write_buffer.cpp:213] >> clear pages in double write buffer. file name=miniob/db/sys/join_table_3.data, page count=0
+[2024-11-11 21:04:17.721338 pid:36062 tid:718c8148e7c0 ctx:0 INFO: close_file@disk_buffer_pool.cpp:305] >> Successfully close file 6:miniob/db/sys/join_table_3.data.
+[2024-11-11 21:04:17.721531 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~DiskBufferPool@disk_buffer_pool.cpp:224] >> disk buffer pool exit
+[2024-11-11 21:04:17.722128 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~Table@table.cpp:52] >> Table has been closed: join_table_3
+[2024-11-11 21:04:17.726812 pid:36062 tid:718c8148e7c0 ctx:0 INFO: clear_pages@double_write_buffer.cpp:213] >> clear pages in double write buffer. file name=miniob/db/sys/join_table_empty_1.data, page count=0
+[2024-11-11 21:04:17.726851 pid:36062 tid:718c8148e7c0 ctx:0 INFO: close_file@disk_buffer_pool.cpp:305] >> Successfully close file 5:miniob/db/sys/join_table_empty_1.data.
+[2024-11-11 21:04:17.726923 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~DiskBufferPool@disk_buffer_pool.cpp:224] >> disk buffer pool exit
+[2024-11-11 21:04:17.726945 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~Table@table.cpp:52] >> Table has been closed: join_table_empty_1
+[2024-11-11 21:04:17.726976 pid:36062 tid:718c8148e7c0 ctx:0 INFO: ~Db@db.cpp:48] >> Db has been closed: sys
+                                                                                                                                                                                                                                                              
