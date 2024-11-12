@@ -143,6 +143,7 @@ RC ExpressionBinder::bind_star_expression(
 RC ExpressionBinder::bind_unbound_field_expression(
     unique_ptr<Expression> &expr, vector<unique_ptr<Expression>> &bound_expressions)
 {
+  //LOG_INFO("bind_unbound_field_expression");
   if (nullptr == expr) {
     return RC::SUCCESS;
   }

@@ -73,6 +73,7 @@ RC FloatType::negative(const Value &val, Value &result) const
 
 RC FloatType::set_value_from_str(Value &val, const string &data) const
 {
+  LOG_INFO("OTHER TYPES TO FLOATS %s ",data);
   RC                rc = RC::SUCCESS;
   stringstream deserialize_stream;
   deserialize_stream.clear();
@@ -103,13 +104,16 @@ int FloatType::cast_cost(AttrType type)
   else if(type == AttrType::FLOATS){
     return 0;
   }
+  else if(type == AttrType::CHARS){
+    return 2;
+  }
   return INT32_MAX;
   
 }
 
 RC FloatType::cast_to(const Value&val, AttrType type , Value &result) const
 {
-  //LOG_WARN("float::Casting..")
+  //LOG_INFO("float::Casting..");
   switch (type)
   {
   case AttrType::INTS:{

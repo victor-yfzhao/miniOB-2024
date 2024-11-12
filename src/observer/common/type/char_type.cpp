@@ -117,8 +117,7 @@ int CharType::cast_cost(AttrType type)
   if (type == AttrType::VECTORS) {
     return 0;
   }
-  if( type == AttrType::INTS)
-  {
+  if( type == AttrType::INTS) {
     return 2;
   }
   return INT32_MAX;
