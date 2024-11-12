@@ -100,6 +100,9 @@ RC CharType::cast_to(const Value &val, AttrType type, Value &result) const
     case AttrType::INTS: {
       return DataType::type_instance(AttrType::INTS)->set_value_from_str(result,val.get_string());
     } 
+    case AttrType::FLOATS: {
+      return DataType::type_instance(AttrType::FLOATS)->set_value_from_str(result,val.get_string());
+    }
       break;
     default: return RC::UNIMPLEMENTED;
   }
@@ -118,6 +121,9 @@ int CharType::cast_cost(AttrType type)
     return 0;
   }
   if( type == AttrType::INTS) {
+    return 2;
+  }
+  if( type == AttrType::FLOATS) {
     return 2;
   }
   return INT32_MAX;
