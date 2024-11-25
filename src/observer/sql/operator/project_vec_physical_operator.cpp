@@ -9,6 +9,7 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 
 #include "sql/operator/project_vec_physical_operator.h"
+#include <cctype>
 #include "common/log/log.h"
 #include "storage/record/record.h"
 #include "storage/table/table.h"
@@ -67,7 +68,11 @@ RC ProjectVecPhysicalOperator::close()
 RC ProjectVecPhysicalOperator::tuple_schema(TupleSchema &schema) const
 {
   for (const unique_ptr<Expression> &expression : expressions_) {
-    schema.append_cell(expression->name());
+    if (strlen(expression->alias()) == 0) {
+      schema.append_cell(expression->name());
+    } else {
+      schema.append_cell(expression->alias());
+    }
   }
   return RC::SUCCESS;
 }

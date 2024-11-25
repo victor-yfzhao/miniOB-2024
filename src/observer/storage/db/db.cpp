@@ -39,6 +39,8 @@ Db::~Db()
     delete iter.second;
   }
 
+  alias_table_map_.clear();
+
   if (log_handler_) {
     // 停止日志并等待写入完成
     log_handler_->stop();
@@ -185,9 +187,22 @@ Table *Db::find_table(const char *table_name) const
   if (iter != opened_tables_.end()) {
     return iter->second;
   }
+  return find_table_by_alias(table_name);
+}
+
+Table *Db::find_table_by_alias(const char *alias) const
+{
+  unordered_map<string, string>::const_iterator iter = alias_table_map_.find(alias);
+  if (iter != alias_table_map_.end()) {
+    return find_table(iter->second.c_str());
+  }
   return nullptr;
 }
 
+void Db::add_table_alias(const char *table_name, const char *alias)
+{
+  alias_table_map_[alias] = table_name;
+}
 
 Table *Db::find_table(int32_t table_id) const
 {

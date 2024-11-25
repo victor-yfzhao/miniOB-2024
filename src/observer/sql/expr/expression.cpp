@@ -18,6 +18,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/stmt/select_stmt.h"
 #include "sql/operator/logical_operator.h"
 #include "sql/operator/physical_operator.h"
+#include <cmath>
 
 using namespace std;
 
@@ -1184,4 +1185,83 @@ RC SubSelectExpr::set_sub_select_result(){
 RC SubSelectExpr::set_sub_select_result(const std::vector<Value> &sub_select_result){
   this->sub_select_result_ = sub_select_result;
   return RC::SUCCESS;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+FunctionExpr::FunctionExpr(Type type, Expression* child)
+    : function_type_(type), child_(child)
+{}
+
+FunctionExpr::FunctionExpr(Type type, unique_ptr<Expression> child)
+    : function_type_(type), child_(std::move(child))
+{}
+
+bool FunctionExpr::equal(const Expression &other) const
+{
+  if (this == &other) {
+    return true;
+  }
+  if (other.type() != type()) {
+    return false;
+  }
+  const FunctionExpr &other_func_expr = static_cast<const FunctionExpr &>(other);
+  return function_type_ == other_func_expr.function_type() && child_->equal(*other_func_expr.child());
+}
+
+// AttrType FunctionExpr::value_type() const
+// {
+//   switch (function_type_) {
+//     case Type::ROUND:{
+//       return AttrType::FLOATS;
+//       break;
+//       }
+//     case Type::LENGTH:{
+//       return AttrType::CHARS;
+//       break;
+//       }
+//     case Type::DATE_FORMAT:{
+//       return AttrType::DATES;
+//       break;
+//       }
+//     default:
+//       return AttrType::FLOATS;
+//   }
+// }
+
+RC FunctionExpr::get_value(const Tuple &tuple, Value &value) const
+{
+  RC rc = RC::SUCCESS;
+  Value child_value;
+  rc = child_->get_value(tuple, child_value);
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to get value of child expression. rc=%s", strrc(rc));
+    return rc;
+  }
+  return calc_value(child_value, value);
+}
+
+RC FunctionExpr::calc_value(const Value &child_value, Value &value) const
+{
+  RC rc = RC::SUCCESS;
+  value.set_type(value_type());
+  switch (function_type_) {
+    case Type::ROUND: {
+      value = Value(round(child_value.get_float()));
+      break;
+    }
+    case Type::LENGTH: {
+      value = Value(static_cast<int>(child_value.get_string().size()));
+      break;
+    }
+    case Type::DATE_FORMAT: {
+      //do nothing
+      break;
+    }
+    default: {
+      rc = RC::INTERNAL;
+      LOG_WARN("unsupported function type. %d", function_type_);
+    }
+  }
+  return rc;
 }

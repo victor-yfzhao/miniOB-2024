@@ -62,6 +62,16 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   return expr;
 }
 
+FunctionExpr * create_function_expression(FunctionExpr::Type type,
+                                          Expression *args,
+                                          const char *sql_string,
+                                          YYLTYPE *llocp)
+{
+  FunctionExpr *expr = new FunctionExpr(type, args);
+  expr->set_name(token_name(sql_string, llocp));
+  return expr;
+}
+
 %}
 
 %define api.pure full
@@ -115,6 +125,9 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         L2_DISTANCE
         COSINE_DISTANCE
         INNER_PRODUCT
+        LENGTH
+        ROUND
+        AS
         DATE_T // ADD DATE
         HELP
         EXIT
@@ -180,6 +193,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 //非终结符
 
 /** type 定义了各种解析后的结果输出的是什么类型。类型对应了 union 中的定义的成员变量名称 **/
+%type <string>              alias
 %type <number>              type
 %type <condition>           condition
 %type <condition_list>      having
@@ -693,18 +707,35 @@ calc_stmt:
     }
     ;
 
+alias:
+    /* empty */ {
+      $$ = nullptr;
+    }
+    | ID {
+      $$ = $1;
+    }
+    | AS ID {
+      $$ = $2;
+    }
+
 expression_list:
-    expression
+    expression alias
     {
       $$ = new std::vector<std::unique_ptr<Expression>>;
+      if (nullptr != $2) {
+        $1->set_alias($2);
+      }
       $$->emplace_back($1);
     }
-    | expression COMMA expression_list
+    | expression alias COMMA expression_list
     {
-      if ($3 != nullptr) {
-        $$ = $3;
+      if ($4 != nullptr) {
+        $$ = $4;
       } else {
         $$ = new std::vector<std::unique_ptr<Expression>>;
+      }
+      if (nullptr != $2) {
+        $1->set_alias($2);
       }
       $$->emplace($$->begin(), $1);
     }
@@ -751,6 +782,12 @@ expression:
     }
     | INNER_PRODUCT LBRACE expression COMMA expression RBRACE {
       $$ = create_vector_expression(VectorExpr::Type::INNER_PRODUCT, $3, $5, sql_string, &@$);
+    }
+    | LENGTH LBRACE expression RBRACE {
+      $$ = create_function_expression(FunctionExpr::Type::LENGTH, $3, sql_string, &@$);
+    }
+    | ROUND LBRACE expression RBRACE {
+      $$ = create_function_expression(FunctionExpr::Type::ROUND, $3, sql_string, &@$);
     }
     // your code here
     | COUNT LBRACE expression RBRACE{
@@ -821,20 +858,33 @@ relation:
     }
     ;
 rel_list:
-    relation {
+    relation alias{
       $$ = new std::vector<std::string>();
+      if ($2 != nullptr) {
+        $$->push_back(std::string($1) + '.' + std::string($2));
+        free($1);
+        free($2);
+      } else {
       $$->push_back($1);
       free($1);
+      }
     }
-    | relation COMMA rel_list {
-      if ($3 != nullptr) {
-        $$ = $3;
+    | relation alias COMMA rel_list {
+      if ($4 != nullptr) {
+        $$ = $4;
       } else {
         $$ = new std::vector<std::string>;
       }
-
-      $$->insert($$->begin(), $1);
-      free($1);
+      if ($2 != nullptr) {
+        $$->insert($$->begin(), std::string($1) + '.' + std::string($2));
+        free($1);
+        free($2);
+      } else {
+        $$->insert($$->begin(), $1);
+        free($1);
+      }
+      // $$->insert($$->begin(), $1);
+      // free($1);
     }
     ;
 
