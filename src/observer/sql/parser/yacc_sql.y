@@ -182,7 +182,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 /** type 定义了各种解析后的结果输出的是什么类型。类型对应了 union 中的定义的成员变量名称 **/
 %type <number>              type
 %type <condition>           condition
-%type <condition>           having
+%type <condition_list>      having
 %type <value>               value
 %type <number>              number
 %type <string>              relation
@@ -677,7 +677,8 @@ select_stmt:        /*  select 语句的语法解析树*/
       }
 
       if($8 != nullptr) {
-        $$->selection.having = $8;
+        $$->selection.having_conditions.swap(*$8);
+        delete $8;
       }
 
       $$->selection.sub_select = nullptr;
@@ -982,7 +983,7 @@ having:
     {
       $$ = nullptr; 
     }
-    | HAVING condition
+    | HAVING condition_list
     {
       $$ = $2; // 返回 expression_list
     }
