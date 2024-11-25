@@ -81,6 +81,14 @@ public:
    */
   Table *find_table(int32_t table_id) const;
 
+  /**
+   * @brief 根据表的别名查找表
+   */
+  Table *find_table_by_alias(const char *alias) const;
+
+  void add_table_alias(const char *table_name, const char *alias);
+
+  unordered_map<string, string> &alias_table_map() { return alias_table_map_; }
   /// @brief 当前数据库的名称
   const char *name() const;
 
@@ -119,7 +127,8 @@ private:
 private:
   string                         name_;                 ///< 数据库名称
   string                         path_;                 ///< 数据库文件存放的目录
-  unordered_map<string, Table *>opened_tables_;        ///< 当前所有打开的表
+  unordered_map<string, Table *> opened_tables_;        ///< 当前所有打开的表
+  unordered_map<string, string>  alias_table_map_;      ///< 表别名到表名的映射
   unique_ptr<BufferPoolManager>  buffer_pool_manager_;  ///< 当前数据库的buffer pool管理器
   unique_ptr<LogHandler>         log_handler_;          ///< 当前数据库的日志处理器
   unique_ptr<TrxKit>             trx_kit_;              ///< 当前数据库的事务管理器

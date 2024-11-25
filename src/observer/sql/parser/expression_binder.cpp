@@ -164,8 +164,12 @@ RC ExpressionBinder::bind_unbound_field_expression(
   } else {
     table = context_.find_table(table_name);
     if (nullptr == table) {
+      table_name = alias_table_map_[table_name].c_str();
+      table = context_.find_table(table_name);
+      if (nullptr == table) {
       LOG_INFO("no such table in from list: %s", table_name);
       return RC::SCHEMA_TABLE_NOT_EXIST;
+      }
     }
   }
 
@@ -181,6 +185,11 @@ RC ExpressionBinder::bind_unbound_field_expression(
     Field      field(table, field_meta);
     FieldExpr *field_expr = new FieldExpr(field);
     field_expr->set_name(field_name);
+    if (is_blank(unbound_field_expr->alias())) {
+      field_expr->set_alias(field_name);
+    } else {
+      field_expr->set_alias(unbound_field_expr->alias());
+    }
     bound_expressions.emplace_back(field_expr);
   }
 

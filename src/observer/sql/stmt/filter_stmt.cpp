@@ -105,7 +105,7 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     LOG_WARN("invalid compare operator : %d", comp);
     return RC::INVALID_ARGUMENT;
   }
-  ExpressionBinder expression_binder(binder_context);
+  ExpressionBinder expression_binder(binder_context, db->alias_table_map());
 
   vector<unique_ptr<Expression>> filter_expressions;
 

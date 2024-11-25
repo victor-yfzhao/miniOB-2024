@@ -49,6 +49,7 @@ enum class ExprType
   ARITHMETIC,   ///< 算术运算
   AGGREGATION,  ///< 聚合运算
   VECTOR_EXPR,  ///< 向量表达式
+  FunctionExpr, ///< 函数表达式
 
   SUB_SELECT,   ///< 子查询
 };
@@ -113,7 +114,9 @@ public:
    * @brief 表达式的名字，比如是字段名称，或者用户在执行SQL语句时输入的内容
    */
   virtual const char *name() const { return name_.c_str(); }
+  virtual const char *alias() const { return alias_.c_str(); }
   virtual void        set_name(std::string name) { name_ = name; }
+  virtual void        set_alias(std::string alias) { alias_ = alias; }
 
   /**
    * @brief 表达式在下层算子返回的 chunk 中的位置
@@ -144,6 +147,7 @@ protected:
 
 private:
   std::string name_;
+  std::string alias_;
 };
 
 class StarExpr : public Expression
@@ -565,4 +569,40 @@ private:
   std::shared_ptr<LogicalOperator>  project_oper_;
   std::shared_ptr<PhysicalOperator> project_phy_oper_;
   std::vector<Value>                sub_select_result_;
+};
+
+
+////////////////////////////////////////// inline functions //////////////////////////////////////////
+
+class FunctionExpr : public Expression
+{public:
+  enum class Type{
+    LENGTH,
+    ROUND,
+    DATE_FORMAT
+    };
+  FunctionExpr(Type type, Expression *child);
+  FunctionExpr(Type type, std::unique_ptr<Expression> child);
+
+  virtual ~FunctionExpr() = default;
+
+  bool equal(const Expression &other) const override;
+
+  ExprType type() const override { return ExprType::FunctionExpr; }
+
+  AttrType value_type() const override { return child_->value_type(); }
+
+  Type function_type() const { return function_type_; }
+
+  RC get_value(const Tuple &tuple, Value &value) const override;
+
+
+  std::unique_ptr<Expression> &child() { return child_; }
+
+  const std::unique_ptr<Expression> &child() const { return child_; }
+private:
+  RC calc_value(const Value &child_value, Value &value) const;
+
+  Type                        function_type_;
+  std::unique_ptr<Expression> child_;
 };

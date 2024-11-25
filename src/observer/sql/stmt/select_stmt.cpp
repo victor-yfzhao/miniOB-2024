@@ -20,6 +20,8 @@ See the Mulan PSL v2 for more details. */
 #include "storage/table/table.h"
 #include "sql/parser/expression_binder.h"
 
+#include <string>
+
 using namespace std;
 using namespace common;
 
@@ -31,6 +33,16 @@ SelectStmt::~SelectStmt()
   }
 }
 
+void split_string(const std::string &input, std::string &part1, std::string &part2) {
+    size_t pos = input.find('.');
+    if (pos != std::string::npos) {
+        part1 = input.substr(0, pos);
+        part2 = input.substr(pos + 1);
+    } else {
+        part1 = input;
+        part2.clear();
+    }
+}
 RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
 {
   if (nullptr == db) {
@@ -53,14 +65,30 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     }
 
     Table *table = db->find_table(table_name);
+    std::string table_name1, alias;
     if (nullptr == table) {
-      LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
-      return RC::SCHEMA_TABLE_NOT_EXIST;
-    }
-
+      table = db->find_table_by_alias(table_name); 
+      if (nullptr == table){ 
+        split_string(table_name, table_name1, alias);
+        if(alias.empty()){
+          LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
+          return RC::SCHEMA_TABLE_NOT_EXIST;
+        } else {
+        // LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
+        // return RC::SCHEMA_TABLE_NOT_EXIST;
+        table = db->find_table(table_name1.c_str());
+        db->add_table_alias(table_name1.c_str(), alias.c_str());
+        }
+      }
+    } 
     binder_context.add_table(table);
     tables.push_back(table);
-    table_map.insert({table_name, table});
+    if (alias.empty()){
+      table_map.insert({table_name, table});
+    } else {
+      table_map.insert({table_name1, table});
+      table_map.insert({alias, table});
+    }
   }
   //inner join 
   std::reverse(select_sql.innerjoin.begin(), select_sql.innerjoin.end());
@@ -91,7 +119,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
 
   // collect query fields in `select` statement
   vector<unique_ptr<Expression>> bound_expressions;
-  ExpressionBinder expression_binder(binder_context);
+  ExpressionBinder expression_binder(binder_context, db->alias_table_map());
   
   for (unique_ptr<Expression> &expression : select_sql.expressions) {
     RC rc = expression_binder.bind_expression(expression, bound_expressions);
