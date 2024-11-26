@@ -774,6 +774,10 @@ expression:
     | '*' {
       $$ = new StarExpr();
     }
+    | ID DOT '*'  {
+      $$ = new StarExpr($1);
+      free($1);
+    }
     | L2_DISTANCE LBRACE expression COMMA expression RBRACE {
       $$ = create_vector_expression(VectorExpr::Type::L2_DISTANCE, $3, $5, sql_string, &@$);
     }
