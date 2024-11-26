@@ -31,6 +31,11 @@ SelectStmt::~SelectStmt()
     delete filter_stmt_;
     filter_stmt_ = nullptr;
   }
+
+  if(nullptr != having_stmt_) {
+    delete having_stmt_;
+    having_stmt_ = nullptr;
+  }
 }
 
 void split_string(const std::string &input, std::string &part1, std::string &part2) {
@@ -156,6 +161,15 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
     return rc;
   }
 
+    FilterStmt *having_stmt = nullptr;
+    rc = FilterStmt::create(db,
+    default_table,
+    &table_map,
+    select_sql.having_conditions.data(),
+    static_cast<int>(select_sql.having_conditions.size()),
+    having_stmt,
+    binder_context);
+
   // everything alright
   SelectStmt *select_stmt = new SelectStmt();
 
@@ -164,6 +178,7 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
   select_stmt->filter_stmt_ = filter_stmt;
   select_stmt->group_by_.swap(group_by_expressions);
   //select_stmt->sub_select_  = (SelectStmt*)sub_select;
+  select_stmt->having_stmt_ = having_stmt;
   stmt                      = select_stmt;
   return RC::SUCCESS;
 }

@@ -196,7 +196,7 @@ FunctionExpr * create_function_expression(FunctionExpr::Type type,
 %type <string>              alias
 %type <number>              type
 %type <condition>           condition
-%type <condition>           having
+%type <condition_list>      having
 %type <value>               value
 %type <number>              number
 %type <string>              relation
@@ -691,7 +691,8 @@ select_stmt:        /*  select 语句的语法解析树*/
       }
 
       if($8 != nullptr) {
-        $$->selection.having = $8;
+        $$->selection.having_conditions.swap(*$8);
+        delete $8;
       }
 
       $$->selection.sub_select = nullptr;
@@ -1032,7 +1033,7 @@ having:
     {
       $$ = nullptr; 
     }
-    | HAVING condition
+    | HAVING condition_list
     {
       $$ = $2; // 返回 expression_list
     }

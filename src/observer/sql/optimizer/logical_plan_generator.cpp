@@ -149,6 +149,22 @@ RC LogicalPlanGenerator::create_plan(SelectStmt *select_stmt, unique_ptr<Logical
 
     last_oper = &group_by_oper;
   }
+  // having_stmt 
+  unique_ptr<LogicalOperator> predicate_oper_having;
+
+  rc = create_plan(select_stmt->having_stmt(), predicate_oper_having);
+  if (OB_FAIL(rc)) {
+    LOG_WARN("failed to create predicate logical plan. rc=%s", strrc(rc));
+    return rc;
+  }
+
+  if (predicate_oper_having) {
+    if (*last_oper) {
+      predicate_oper_having->add_child(std::move(*last_oper));
+    }
+
+    last_oper = &predicate_oper_having;
+  }
 
   auto project_oper = make_unique<ProjectLogicalOperator>(std::move(select_stmt->query_expressions()));
   if (*last_oper) {

@@ -119,7 +119,7 @@ struct SelectSqlNode
   std::vector<innerjoinSqlNode>            innerjoin;
   std::vector<std::unique_ptr<Expression>> group_by;     ///< group by clause
   SelectSqlNode                           *sub_select;   ///< 子查询
-  ConditionSqlNode                        *having=nullptr;       ///< group by having 
+  std::vector<ConditionSqlNode>            having_conditions;   ///< group by having 
 };
 
 /**
