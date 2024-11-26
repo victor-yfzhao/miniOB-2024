@@ -118,7 +118,10 @@ RC ExpressionBinder::bind_star_expression(
   if (nullptr == expr) {
     return RC::SUCCESS;
   }
-
+  if (expr->alias() != nullptr) {
+    LOG_WARN("star expression cannot have alias");
+    return RC::INVALID_ARGUMENT;
+  }
   auto star_expr = static_cast<StarExpr *>(expr.get());
 
   vector<Table *> tables_to_wildcard;
