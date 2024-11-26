@@ -118,7 +118,7 @@ RC ExpressionBinder::bind_star_expression(
   if (nullptr == expr) {
     return RC::SUCCESS;
   }
-  if (expr->alias() != nullptr) {
+  if (0 != strlen(expr->alias())) {
     LOG_WARN("star expression cannot have alias");
     return RC::INVALID_ARGUMENT;
   }
