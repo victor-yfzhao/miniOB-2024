@@ -128,7 +128,7 @@ RC ExpressionBinder::bind_star_expression(
     Table *table = context_.find_table(table_name);
     if (nullptr == table) {
       table_name = alias_table_map_[table_name].c_str();
-      Table *table = context_.find_table(table_name);
+      table = context_.find_table(table_name);
       if (nullptr == table) {
       LOG_INFO("no such table in from list: %s", table_name);
       return RC::SCHEMA_TABLE_NOT_EXIST;
