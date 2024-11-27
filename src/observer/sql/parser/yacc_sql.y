@@ -662,6 +662,13 @@ kv_pair:
     ;
   
 select_stmt:        /*  select 语句的语法解析树*/
+    SELECT expression_list 
+    {
+      $$ = new ParsedSqlNode(SCF_CALC);
+      $$->calc.expressions.swap(*$2);
+      delete $2;
+    }
+    |
     SELECT expression_list FROM rel_list inner_join_list where group_by having 
     {
       $$ = new ParsedSqlNode(SCF_SELECT);

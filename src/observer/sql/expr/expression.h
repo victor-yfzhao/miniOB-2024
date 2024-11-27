@@ -596,7 +596,7 @@ class FunctionExpr : public Expression
 
   RC get_value(const Tuple &tuple, Value &value) const override;
 
-
+  RC try_get_value(Value &value) const override;
   std::unique_ptr<Expression> &child() { return child_; }
 
   const std::unique_ptr<Expression> &child() const { return child_; }

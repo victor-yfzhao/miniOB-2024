@@ -1269,3 +1269,19 @@ RC FunctionExpr::calc_value(const Value &child_value, Value &value) const
   }
   return rc;
 }
+
+RC FunctionExpr::try_get_value(Value &value) const
+{
+  RC rc = RC::SUCCESS;
+
+  Value child_value;
+
+  rc = child_->try_get_value(child_value);
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
+    return rc;
+  }
+
+
+  return calc_value(child_value, value);
+}

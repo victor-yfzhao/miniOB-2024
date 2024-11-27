@@ -101,7 +101,7 @@ RC ExpressionBinder::bind_expression(unique_ptr<Expression> &expr, vector<unique
     } break;
 
     case ExprType::FunctionExpr: {
-      return RC::SUCCESS;
+      return bind_function_expression(expr, bound_expressions);
     } break;
 
     default: {
@@ -437,53 +437,36 @@ RC ExpressionBinder::bind_vector_expression(
   return RC::SUCCESS;
 }
 
-// RC ExpressionBinder::bind_vector_expression(
-//     unique_ptr<Expression> &expr, vector<unique_ptr<Expression>> &bound_expressions)
-// {
-//   if (nullptr == expr) {
-//     return RC::SUCCESS;
-//   }
+RC ExpressionBinder::bind_function_expression(
+    unique_ptr<Expression> &expr, vector<unique_ptr<Expression>> &bound_expressions)
+{
+  if (nullptr == expr) {
+    return RC::SUCCESS;
+  }
 
-//   auto vector_expr = static_cast<VectorExpr *>(expr.get());
+  auto function_expr = static_cast<FunctionExpr *>(expr.get());
 
-//   vector<unique_ptr<Expression>> child_bound_expressions;
-//   unique_ptr<Expression>        &left_expr  = vector_expr->left();
-//   unique_ptr<Expression>        &right_expr = vector_expr->right();
+  vector<unique_ptr<Expression>> child_bound_expressions;
+  unique_ptr<Expression>        &child_expr = function_expr->child();
 
-//   RC rc = bind_expression(left_expr, child_bound_expressions);
-//   if (OB_FAIL(rc)) {
-//     return rc;
-//   }
+  RC rc = bind_expression(child_expr, child_bound_expressions);
+  if (OB_FAIL(rc)) {
+    return rc;
+  }
 
-//   if (child_bound_expressions.size() != 1) {
-//     LOG_WARN("invalid left children number of vector expression: %d", child_bound_expressions.size());
-//     return RC::INVALID_ARGUMENT;
-//   }
+  if (child_bound_expressions.size() != 1) {
+    LOG_WARN("invalid right children number of vector expression: %d", child_bound_expressions.size());
+    return RC::INVALID_ARGUMENT;
+  }
 
-//   unique_ptr<Expression> &left = child_bound_expressions[0];
-//   if (left.get() != left_expr.get()) {
-//     left_expr.reset(left.release());
-//   }
+  unique_ptr<Expression> &child = child_bound_expressions[0];
+  if (child.get() != child_expr.get()) {
+    child_expr.reset(child.release());
+  }
 
-//   child_bound_expressions.clear();
-//   rc = bind_expression(right_expr, child_bound_expressions);
-//   if (OB_FAIL(rc)) {
-//     return rc;
-//   }
-
-//   if (child_bound_expressions.size() != 1) {
-//     LOG_WARN("invalid right children number of vector expression: %d", child_bound_expressions.size());
-//     return RC::INVALID_ARGUMENT;
-//   }
-
-//   unique_ptr<Expression> &right = child_bound_expressions[0];
-//   if (right.get() != right_expr.get()) {
-//     right_expr.reset(right.release());
-//   }
-
-//   bound_expressions.emplace_back(std::move(expr));
-//   return RC::SUCCESS;
-// }
+  bound_expressions.emplace_back(std::move(expr));
+  return RC::SUCCESS;
+}
 
 RC check_aggregate_expression(AggregateExpr &expression)
 {
