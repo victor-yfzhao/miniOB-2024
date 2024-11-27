@@ -96,44 +96,44 @@ extern int yydebug;
     INNER_PRODUCT = 297,           /* INNER_PRODUCT  */
     LENGTH = 298,                  /* LENGTH  */
     ROUND = 299,                   /* ROUND  */
-    AS = 300,                      /* AS  */
-    DATE_T = 301,                  /* DATE_T  */
-    HELP = 302,                    /* HELP  */
-    EXIT = 303,                    /* EXIT  */
-    DOT = 304,                     /* DOT  */
-    INTO = 305,                    /* INTO  */
-    VALUES = 306,                  /* VALUES  */
-    FROM = 307,                    /* FROM  */
-    JOIN = 308,                    /* JOIN  */
-    INNER = 309,                   /* INNER  */
-    WHERE = 310,                   /* WHERE  */
-    IN_SQL = 311,                  /* IN_SQL  */
-    EXISTS = 312,                  /* EXISTS  */
-    ORDER = 313,                   /* ORDER  */
-    ASC = 314,                     /* ASC  */
-    AND = 315,                     /* AND  */
-    NOT = 316,                     /* NOT  */
-    IS = 317,                      /* IS  */
-    LIKE_SQL = 318,                /* LIKE_SQL  */
-    SET = 319,                     /* SET  */
-    ON = 320,                      /* ON  */
-    LOAD = 321,                    /* LOAD  */
-    DATA = 322,                    /* DATA  */
-    INFILE = 323,                  /* INFILE  */
-    EXPLAIN = 324,                 /* EXPLAIN  */
-    STORAGE = 325,                 /* STORAGE  */
-    FORMAT = 326,                  /* FORMAT  */
-    EQ = 327,                      /* EQ  */
-    LT = 328,                      /* LT  */
-    GT = 329,                      /* GT  */
-    LE = 330,                      /* LE  */
-    GE = 331,                      /* GE  */
-    NE = 332,                      /* NE  */
-    NUMBER = 333,                  /* NUMBER  */
-    FLOAT = 334,                   /* FLOAT  */
-    ID = 335,                      /* ID  */
-    SSS = 336,                     /* SSS  */
-    UMINUS = 337                   /* UMINUS  */
+    DATE_FORMAT = 300,             /* DATE_FORMAT  */
+    AS = 301,                      /* AS  */
+    DATE_T = 302,                  /* DATE_T  */
+    HELP = 303,                    /* HELP  */
+    EXIT = 304,                    /* EXIT  */
+    DOT = 305,                     /* DOT  */
+    INTO = 306,                    /* INTO  */
+    VALUES = 307,                  /* VALUES  */
+    FROM = 308,                    /* FROM  */
+    JOIN = 309,                    /* JOIN  */
+    INNER = 310,                   /* INNER  */
+    WHERE = 311,                   /* WHERE  */
+    IN_SQL = 312,                  /* IN_SQL  */
+    EXISTS = 313,                  /* EXISTS  */
+    ORDER = 314,                   /* ORDER  */
+    ASC = 315,                     /* ASC  */
+    AND = 316,                     /* AND  */
+    NOT = 317,                     /* NOT  */
+    IS = 318,                      /* IS  */
+    LIKE_SQL = 319,                /* LIKE_SQL  */
+    SET = 320,                     /* SET  */
+    ON = 321,                      /* ON  */
+    LOAD = 322,                    /* LOAD  */
+    DATA = 323,                    /* DATA  */
+    INFILE = 324,                  /* INFILE  */
+    EXPLAIN = 325,                 /* EXPLAIN  */
+    STORAGE = 326,                 /* STORAGE  */
+    FORMAT = 327,                  /* FORMAT  */
+    EQ = 328,                      /* EQ  */
+    LT = 329,                      /* LT  */
+    GT = 330,                      /* GT  */
+    LE = 331,                      /* LE  */
+    GE = 332,                      /* GE  */
+    NE = 333,                      /* NE  */
+    NUMBER = 334,                  /* NUMBER  */
+    FLOAT = 335,                   /* FLOAT  */
+    ID = 336,                      /* ID  */
+    SSS = 337                      /* SSS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -142,7 +142,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 165 "yacc_sql.y"
+#line 179 "yacc_sql.y"
 
   ParsedSqlNode *                            sql_node;
   ConditionSqlNode *                         condition;

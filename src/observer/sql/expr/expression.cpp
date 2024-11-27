@@ -1201,6 +1201,22 @@ FunctionExpr::FunctionExpr(Type type, unique_ptr<Expression> child)
     : function_type_(type), child_(std::move(child))
 {}
 
+FunctionExpr::FunctionExpr(Type type, Expression* child, int round_accuracy)
+    : function_type_(type), child_(child), round_accuracy_(round_accuracy)
+{}
+
+FunctionExpr::FunctionExpr(Type type, unique_ptr<Expression> child, int round_accuracy)
+    : function_type_(type), child_(std::move(child)), round_accuracy_(round_accuracy)
+{}
+
+FunctionExpr::FunctionExpr(Type type, Expression* child, const std::string &format)
+    : function_type_(type), child_(child), date_format_(format)
+{}
+
+FunctionExpr::FunctionExpr(Type type, unique_ptr<Expression> child, const std::string &format)
+    : function_type_(type), child_(std::move(child)), date_format_(format)
+{}
+
 bool FunctionExpr::equal(const Expression &other) const
 {
   if (this == &other) {
@@ -1213,25 +1229,7 @@ bool FunctionExpr::equal(const Expression &other) const
   return function_type_ == other_func_expr.function_type() && child_->equal(*other_func_expr.child());
 }
 
-// AttrType FunctionExpr::value_type() const
-// {
-//   switch (function_type_) {
-//     case Type::ROUND:{
-//       return AttrType::FLOATS;
-//       break;
-//       }
-//     case Type::LENGTH:{
-//       return AttrType::CHARS;
-//       break;
-//       }
-//     case Type::DATE_FORMAT:{
-//       return AttrType::DATES;
-//       break;
-//       }
-//     default:
-//       return AttrType::FLOATS;
-//   }
-// }
+
 
 RC FunctionExpr::get_value(const Tuple &tuple, Value &value) const
 {
@@ -1251,9 +1249,10 @@ RC FunctionExpr::calc_value(const Value &child_value, Value &value) const
   value.set_type(value_type());
   switch (function_type_) {
     case Type::ROUND: {
-      value = Value(round(child_value.get_float()));
-      break;
-    }
+      int precision = round_accuracy(); // Assuming the precision is passed as an integer
+      double factor = std::pow(10.0, precision);
+      value = Value(static_cast<float>(round(child_value.get_float() * factor) / factor));
+    } break;
     case Type::LENGTH: {
       value = Value(static_cast<int>(child_value.get_string().size()));
       break;

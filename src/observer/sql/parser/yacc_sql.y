@@ -64,12 +64,25 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 
 FunctionExpr * create_function_expression(FunctionExpr::Type type,
                                           Expression *args,
+                                          int round_accuracy,
+                                          std::string date_format,
                                           const char *sql_string,
                                           YYLTYPE *llocp)
 {
+  if(type == FunctionExpr::Type::ROUND) {
+    FunctionExpr *expr = new FunctionExpr(type, args , round_accuracy);
+    expr->set_name(token_name(sql_string, llocp));
+    return expr;
+  }
+  else if (type == FunctionExpr::Type::DATE_FORMAT) {
+    FunctionExpr *expr = new FunctionExpr(type, args , date_format);
+    expr->set_name(token_name(sql_string, llocp));
+    return expr;
+  }else{
   FunctionExpr *expr = new FunctionExpr(type, args);
   expr->set_name(token_name(sql_string, llocp));
   return expr;
+  }
 }
 
 %}
@@ -127,6 +140,7 @@ FunctionExpr * create_function_expression(FunctionExpr::Type type,
         INNER_PRODUCT
         LENGTH
         ROUND
+        DATE_FORMAT
         AS
         DATE_T // ADD DATE
         HELP
@@ -243,7 +257,7 @@ FunctionExpr * create_function_expression(FunctionExpr::Type type,
 
 %left '+' '-'
 %left '*' '/'
-%nonassoc UMINUS
+// %nonassoc UMINUS
 %%
 
 commands: command_wrapper opt_semicolon  //commands or sqls. parser starts here.
@@ -752,7 +766,11 @@ expression:
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::ADD, $1, $3, sql_string, &@$);
     }
     | expression '-' expression {
+      if ($1 == nullptr) {
+        $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $3, nullptr, sql_string, &@$);
+      } else {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::SUB, $1, $3, sql_string, &@$);
+    }
     }
     | expression '*' expression {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::MUL, $1, $3, sql_string, &@$);
@@ -760,13 +778,9 @@ expression:
     | expression '/' expression {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::DIV, $1, $3, sql_string, &@$);
     }
-    /* | LBRACE expression RBRACE {
-      $$ = $2;
-      $$->set_name(token_name(sql_string, &@$));
-    } */
-    | '-' expression %prec UMINUS {
-      $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $2, nullptr, sql_string, &@$);
-    }
+    // | '-' expression %prec UMINUS {
+    //   $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $2, nullptr, sql_string, &@$);
+    // }
     | value {
       $$ = new ValueExpr(*$1);
       $$->set_name(token_name(sql_string, &@$));
@@ -795,10 +809,13 @@ expression:
       $$ = create_vector_expression(VectorExpr::Type::INNER_PRODUCT, $3, $5, sql_string, &@$);
     }
     | LENGTH LBRACE expression RBRACE {
-      $$ = create_function_expression(FunctionExpr::Type::LENGTH, $3, sql_string, &@$);
+      $$ = create_function_expression(FunctionExpr::Type::LENGTH, $3, -1 , "" , sql_string, &@$);
     }
-    | ROUND LBRACE expression RBRACE {
-      $$ = create_function_expression(FunctionExpr::Type::ROUND, $3, sql_string, &@$);
+    | ROUND LBRACE expression COMMA NUMBER RBRACE {
+      $$ = create_function_expression(FunctionExpr::Type::ROUND, $3, $5 , "" , sql_string, &@$);
+    }
+    | DATE_FORMAT LBRACE expression COMMA SSS RBRACE {
+      $$ = create_function_expression(FunctionExpr::Type::DATE_FORMAT, $3, -1 , $5, sql_string, &@$);
     }
     // your code here
     | COUNT LBRACE expression RBRACE{

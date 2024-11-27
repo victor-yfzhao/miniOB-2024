@@ -416,7 +416,7 @@ private:
 
 private:
   Type                        arithmetic_type_;
-  std::unique_ptr<Expression> left_;
+  std::unique_ptr<Expression> left_ = std::make_unique<ValueExpr>(Value(0));
   std::unique_ptr<Expression> right_;
 };
 
@@ -583,6 +583,10 @@ class FunctionExpr : public Expression
     };
   FunctionExpr(Type type, Expression *child);
   FunctionExpr(Type type, std::unique_ptr<Expression> child);
+  FunctionExpr(Type type, Expression *child, int round_accuracy);
+  FunctionExpr(Type type, std::unique_ptr<Expression> child, int round_accuracy);
+  FunctionExpr(Type type, Expression *child, const std::string &date_format);
+  FunctionExpr(Type type, std::unique_ptr<Expression> child, const std::string &date_format);
 
   virtual ~FunctionExpr() = default;
 
@@ -599,10 +603,20 @@ class FunctionExpr : public Expression
   RC try_get_value(Value &value) const override;
   std::unique_ptr<Expression> &child() { return child_; }
 
+  void set_round_accuracy(int round_accuracy) { round_accuracy_ = round_accuracy;  }
+
+  int  round_accuracy() const { return round_accuracy_; }
+
+  void set_date_format(const std::string &date_format) { date_format_ = date_format; }
+
+  const std::string &date_format() const { return date_format_; }
+
   const std::unique_ptr<Expression> &child() const { return child_; }
 private:
   RC calc_value(const Value &child_value, Value &value) const;
 
   Type                        function_type_;
   std::unique_ptr<Expression> child_;
+  int                         round_accuracy_;
+  std::string                 date_format_;
 };

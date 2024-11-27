@@ -143,6 +143,7 @@ cosine_distance                         RETURN_TOKEN(COSINE_DISTANCE);
 inner_product                           RETURN_TOKEN(INNER_PRODUCT);
 length                                  RETURN_TOKEN(LENGTH);
 round                                   RETURN_TOKEN(ROUND);
+date_format                             RETURN_TOKEN(DATE_FORMAT);
 AS                                      RETURN_TOKEN(AS);
 {ID}                                    yylval->string=strdup(yytext); RETURN_TOKEN(ID);
 "("                                     RETURN_TOKEN(LBRACE);
