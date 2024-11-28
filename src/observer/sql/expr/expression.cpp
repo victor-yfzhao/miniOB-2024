@@ -1397,7 +1397,7 @@ RC FunctionExpr::calc_value(const Value &child_value, Value &value) const
             break;
           }
         }
-      } else if (cell_format_chars[i] != '%' || cell_format_chars[i] != '\'') {
+      } else if (cell_format_chars[i] != '%' && cell_format_chars[i] != '\'') {
         result_date_str += cell_format_chars[i];
       }
     }
