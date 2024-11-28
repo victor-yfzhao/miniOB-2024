@@ -21,6 +21,8 @@ See the Mulan PSL v2 for more details. */
 #include <cmath>
 
 using namespace std;
+std::string month_name[] ={"","January","February","March","April","May","June",
+"July","August","September","October","November","December"};
 
 RC FieldExpr::get_value(const Tuple &tuple, Value &value) const
 {
@@ -1249,16 +1251,158 @@ RC FunctionExpr::calc_value(const Value &child_value, Value &value) const
   value.set_type(value_type());
   switch (function_type_) {
     case Type::ROUND: {
+      if ((child_value.attr_type() != AttrType::FLOATS || child_value.attr_type() != AttrType::INTS) && round_accuracy_ < 0) {
+        return RC::INTERNAL;
+      }
       int precision = round_accuracy(); // Assuming the precision is passed as an integer
       double factor = std::pow(10.0, precision);
       value = Value(static_cast<float>(round(child_value.get_float() * factor) / factor));
     } break;
     case Type::LENGTH: {
+      if (child_value.attr_type() != AttrType::CHARS) {
+        return RC::INTERNAL;
+      }
       value = Value(static_cast<int>(child_value.get_string().size()));
       break;
     }
     case Type::DATE_FORMAT: {
-      //do nothing
+
+    int cell_date;
+    if (child_value.attr_type() != AttrType::DATES && child_value.attr_type() != AttrType::CHARS) {
+      return RC::INTERNAL;
+    }
+    if (child_value.attr_type() == AttrType::CHARS)
+    {
+    std::string child_value_str = child_value.get_string();
+    if (child_value_str.size() < 8 || child_value_str.size() > 10) {
+      return RC::INVALID_ARGUMENT;
+    }
+
+    size_t first_dash = child_value_str.find('-');
+    size_t second_dash = child_value_str.find('-', first_dash + 1);
+
+    if (first_dash == string::npos || second_dash == string::npos) {
+      return RC::INVALID_ARGUMENT;
+    }
+
+    int year, month, day;
+    try {
+      year = stoi(child_value_str.substr(0, first_dash));
+      month = stoi(child_value_str.substr(first_dash + 1, second_dash - first_dash - 1));
+      day = stoi(child_value_str.substr(second_dash + 1));
+    } catch (const exception &e) {
+      return RC::INVALID_ARGUMENT;
+    }
+
+    if (month < 1 || month > 12 || day < 1 || day > 31) {
+      return RC::INVALID_ARGUMENT;
+    }
+
+    // Check for days in month
+    static const int days_in_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    if (month == 2) {
+      bool is_leap = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+      if (day > (is_leap ? 29 : 28)) {
+        return RC::INVALID_ARGUMENT;
+      }
+    } else if (day > days_in_month[month - 1]) {
+      return RC::INVALID_ARGUMENT;
+    }
+
+    cell_date = year * 10000 + month * 100 + day;
+    }
+    else {
+    cell_date = child_value.get_int();
+    }
+    const char *cell_format_chars = date_format_.c_str();
+
+    std::string result_date_str;
+    int year = cell_date / 10000;
+    int month = (cell_date / 100) % 100;
+    int day = cell_date % 100;
+    for (size_t i = 0; i < strlen(cell_format_chars); i++) {
+      // A ~ z
+      if (65 <= cell_format_chars[i] && cell_format_chars[i] <= 122) {
+        switch (cell_format_chars[i]) {
+          case 'Y': {
+            char tmp[5];
+            sprintf(tmp, "%d", year);
+            result_date_str += tmp;
+            break;
+          }
+          case 'y': {
+            char tmp[5];
+            sprintf(tmp, "%d", year % 100);
+            if (0 <= (year % 100) && (year % 100) <= 9) {
+              result_date_str += "0";
+            }
+            result_date_str += tmp;
+            break;
+          }
+          case 'M': {
+            if (month <= 0 || month > 12) {
+              return RC::INTERNAL;
+            }
+            result_date_str += month_name[month];
+            break;
+          }
+          case 'm': {
+            char tmp[3];
+            sprintf(tmp, "%d", month);
+            if (0 <= month && month <= 9) {
+              result_date_str += "0";
+            }
+            result_date_str += tmp;
+            break;
+          }
+          case 'D': {
+            char tmp[3];
+            sprintf(tmp, "%d", day);
+            result_date_str += tmp;
+            if (11 <= day && day <= 13) {
+              result_date_str += "th";
+            } else {
+              switch (day % 10) {
+                case 1: {
+                  result_date_str += "st";
+                  break;
+                }
+                case 2: {
+                  result_date_str += "nd";
+                  break;
+                }
+                case 3: {
+                  result_date_str += "rd";
+                  break;
+                }
+                default: {
+                  result_date_str += "th";
+                  break;
+                }
+              }
+            }
+            break;
+          }
+          case 'd': {
+            char tmp[3];
+            sprintf(tmp, "%d", day);
+            if (0 <= day && day <= 9) {
+              result_date_str += "0";
+            }
+            result_date_str += tmp;
+            break;
+          }
+          default: {
+            result_date_str += cell_format_chars[i];
+            break;
+          }
+        }
+      } else if (cell_format_chars[i] != '%') {
+        result_date_str += cell_format_chars[i];
+      }
+    }
+    value = Value(result_date_str.c_str());
+    return RC::SUCCESS;
       break;
     }
     default: {
