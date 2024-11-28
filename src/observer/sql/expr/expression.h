@@ -416,7 +416,8 @@ private:
 
 private:
   Type                        arithmetic_type_;
-  std::unique_ptr<Expression> left_ = std::make_unique<ValueExpr>(Value(0));
+  std::unique_ptr<Expression> left_ ;
+  // = std::make_unique<ValueExpr>(Value(0));
   std::unique_ptr<Expression> right_;
 };
 

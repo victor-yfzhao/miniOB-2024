@@ -257,7 +257,7 @@ FunctionExpr * create_function_expression(FunctionExpr::Type type,
 
 %left '+' '-'
 %left '*' '/'
-// %nonassoc UMINUS
+%nonassoc UMINUS
 %%
 
 commands: command_wrapper opt_semicolon  //commands or sqls. parser starts here.
@@ -766,11 +766,7 @@ expression:
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::ADD, $1, $3, sql_string, &@$);
     }
     | expression '-' expression {
-      if ($1 == nullptr) {
-        $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $3, nullptr, sql_string, &@$);
-      } else {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::SUB, $1, $3, sql_string, &@$);
-    }
     }
     | expression '*' expression {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::MUL, $1, $3, sql_string, &@$);
@@ -778,9 +774,9 @@ expression:
     | expression '/' expression {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::DIV, $1, $3, sql_string, &@$);
     }
-    // | '-' expression %prec UMINUS {
-    //   $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $2, nullptr, sql_string, &@$);
-    // }
+    | '-' expression %prec UMINUS {
+      $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $2, nullptr, sql_string, &@$);
+    }
     | value {
       $$ = new ValueExpr(*$1);
       $$->set_name(token_name(sql_string, &@$));
@@ -813,6 +809,9 @@ expression:
     }
     | ROUND LBRACE expression COMMA NUMBER RBRACE {
       $$ = create_function_expression(FunctionExpr::Type::ROUND, $3, $5 , "" , sql_string, &@$);
+    }
+    | ROUND LBRACE expression RBRACE {
+      $$ = create_function_expression(FunctionExpr::Type::ROUND, $3, 0 ,"", sql_string, &@$);
     }
     | DATE_FORMAT LBRACE expression COMMA SSS RBRACE {
       $$ = create_function_expression(FunctionExpr::Type::DATE_FORMAT, $3, -1 , $5, sql_string, &@$);
