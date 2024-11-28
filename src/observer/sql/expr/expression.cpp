@@ -1401,7 +1401,14 @@ RC FunctionExpr::calc_value(const Value &child_value, Value &value) const
         result_date_str += cell_format_chars[i];
       }
     }
-    value = Value(result_date_str.c_str());
+    std::string cleaned_str;
+
+    for (char c : result_date_str) {
+        if (c != '\'') {
+            cleaned_str += c;
+        }
+    }
+    value = Value(cleaned_str.c_str());
     return RC::SUCCESS;
       break;
     }
