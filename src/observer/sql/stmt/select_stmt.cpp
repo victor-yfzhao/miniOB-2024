@@ -82,9 +82,11 @@ RC SelectStmt::create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt)
         // LOG_WARN("no such table. db=%s, table_name=%s", db->name(), table_name);
         // return RC::SCHEMA_TABLE_NOT_EXIST;
         if(db->find_table_by_alias(alias.c_str()) != nullptr){
-          if (db->find_table_by_alias(alias.c_str())->name() != table_name1){
+          if (db->find_table_by_alias(alias.c_str())->name() != table_name1 && select_sql.sub_select == nullptr){
           LOG_WARN("alias already exists");
           return RC::INTERNAL;
+          } else {
+            //do nothing
           }
         }
         table = db->find_table(table_name1.c_str());
