@@ -40,6 +40,7 @@ public:
 
 public:
   static RC create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt);
+  static RC create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt, int has_subselect);
 
 public:
   const std::vector<Table *> &tables() const { return tables_; }

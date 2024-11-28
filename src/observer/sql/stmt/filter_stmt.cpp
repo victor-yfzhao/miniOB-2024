@@ -165,7 +165,7 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   else if (1 == condition.has_sub_select) {
     FilterObj filter_obj;
     Stmt *sub_select_stmt;
-    RC rc_tmp = SelectStmt::create(db, *condition.sub_select, sub_select_stmt);
+    RC rc_tmp = SelectStmt::create(db, *condition.sub_select, sub_select_stmt , 1);
     if (rc_tmp != RC::SUCCESS) {
       return rc_tmp;
     }
@@ -229,7 +229,7 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   else if (2 == condition.has_sub_select) {
     FilterObj filter_obj;
     Stmt *sub_select_stmt;
-    RC rc_tmp = SelectStmt::create(db, *condition.sub_select, sub_select_stmt);
+    RC rc_tmp = SelectStmt::create(db, *condition.sub_select, sub_select_stmt , 1);
     if(rc_tmp != RC::SUCCESS){
       return rc_tmp;
     }
