@@ -14,6 +14,7 @@ See the Mulan PSL v2 for more details. */
 
 #include "common/log/log.h"
 #include "common/types.h"
+#include "sql/stmt/select_stmt.h"
 #include "sql/stmt/create_table_stmt.h"
 #include "event/sql_debug.h"
 
@@ -28,8 +29,22 @@ RC CreateTableStmt::create(Db *db, const CreateTableSqlNode &create_table, Stmt 
   if (storage_format == StorageFormat::UNKNOWN_FORMAT) {
     return RC::INVALID_ARGUMENT;
   }
-  stmt = new CreateTableStmt(create_table.relation_name, create_table.attr_infos, storage_format);
-  sql_debug("create table statement: table name %s", create_table.relation_name.c_str());
+  if (create_table.sub_select == nullptr) {
+    stmt = new CreateTableStmt(create_table.relation_name, create_table.attr_infos, storage_format);
+    sql_debug("create table statement: table name %s", create_table.relation_name.c_str());
+    return RC::SUCCESS;
+  }
+
+  Stmt *sub_select_stmt = nullptr;
+  RC rc = SelectStmt::create(db, *create_table.sub_select, sub_select_stmt);
+  if (rc != RC::SUCCESS) {
+    return rc;
+  }
+  
+  SelectStmt *select_stmt = dynamic_cast<SelectStmt *>(sub_select_stmt);
+
+  stmt = new CreateTableStmt(create_table.relation_name, storage_format, select_stmt);
+
   return RC::SUCCESS;
 }
 

@@ -100,6 +100,7 @@ FunctionExpr * create_function_expression(FunctionExpr::Type type,
 //标识tokens
 %token  SEMICOLON
         BY
+        AS
         CREATE
         DROP
         GROUP
@@ -141,7 +142,6 @@ FunctionExpr * create_function_expression(FunctionExpr::Type type,
         LENGTH
         ROUND
         DATE_FORMAT
-        AS
         DATE_T // ADD DATE
         HELP
         EXIT
@@ -408,6 +408,15 @@ create_table_stmt:    /*create table 语句的语法解析树*/
         create_table.storage_format = $8;
         free($8);
       }
+    }
+    | CREATE TABLE ID AS select_stmt
+    {
+      $$ = new ParsedSqlNode(SCF_CREATE_TABLE);
+      CreateTableSqlNode &create_table = $$->create_table;
+      create_table.relation_name = $3;
+      free($3);
+
+      create_table.sub_select = &$5->selection;
     }
     ;
 attr_def_list:
