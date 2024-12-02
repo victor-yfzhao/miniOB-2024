@@ -39,8 +39,20 @@ RC FilterStmt::create(Db *db, Table *default_table, std::unordered_map<std::stri
   FilterStmt *tmp_stmt = new FilterStmt();
   for (int i = 0; i < condition_num; i++) {
 
-    if(conditions[i].has_sub_select && conditions[i].right_is_const != 1){
-      SelectSqlNode *sub_select_node = conditions[i].sub_select;
+    if(conditions[i].left_is_sub_select && conditions[i].right_is_const != 1){
+      SelectSqlNode *sub_select_node = conditions[i].left_sub_select;
+      if (sub_select_node->expressions.size() != 1) {
+        LOG_WARN("sub select should have only one field");
+        return RC::INVALID_ARGUMENT;
+      }
+      if (sub_select_node->expressions[0]->type() != ExprType::UNBOUND_FIELD && sub_select_node->expressions[0]->type() != ExprType::UNBOUND_AGGREGATION) {
+        LOG_WARN("sub select field should be a field");
+        return RC::INVALID_ARGUMENT;
+      }
+    }
+
+    if(conditions[i].right_is_sub_select && conditions[i].right_is_const != 1){
+      SelectSqlNode *sub_select_node = conditions[i].right_sub_select;
       if (sub_select_node->expressions.size() != 1) {
         LOG_WARN("sub select should have only one field");
         return RC::INVALID_ARGUMENT;
@@ -110,14 +122,14 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
   vector<unique_ptr<Expression>> filter_expressions;
 
   unique_ptr<Expression> left_expression;
-  if (1 == condition.has_sub_select) {
+  if (1 == condition.left_is_sub_select) {
     left_expression.reset(new SubSelectExpr());
   } else {
     left_expression.reset(condition.left_expr);
   }
 
   unique_ptr<Expression> right_expression;
-  if (2 == condition.has_sub_select) {
+  if (1 == condition.right_is_sub_select) {
     right_expression.reset(new SubSelectExpr());
   } else {
     right_expression.reset(condition.right_expr);
@@ -162,10 +174,10 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     filter_obj.init_value(left_cell);
     filter_unit->set_left(filter_obj);
   } 
-  else if (1 == condition.has_sub_select) {
+  else if (1 == condition.left_is_sub_select) {
     FilterObj filter_obj;
     Stmt *sub_select_stmt;
-    RC rc_tmp = SelectStmt::create(db, *condition.sub_select, sub_select_stmt , 1);
+    RC rc_tmp = SelectStmt::create(db, *condition.left_sub_select, sub_select_stmt , 1);
     if (rc_tmp != RC::SUCCESS) {
       return rc_tmp;
     }
@@ -226,10 +238,10 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
     filter_obj.init_expr(right_expr);
     filter_unit->set_right(filter_obj);
   }
-  else if (2 == condition.has_sub_select) {
+  else if (1 == condition.right_is_sub_select) {
     FilterObj filter_obj;
     Stmt *sub_select_stmt;
-    RC rc_tmp = SelectStmt::create(db, *condition.sub_select, sub_select_stmt , 1);
+    RC rc_tmp = SelectStmt::create(db, *condition.right_sub_select, sub_select_stmt , 1);
     if(rc_tmp != RC::SUCCESS){
       return rc_tmp;
     }

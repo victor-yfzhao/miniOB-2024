@@ -1325,14 +1325,14 @@ RC FunctionExpr::calc_value(const Value &child_value, Value &value) const
       if (65 <= cell_format_chars[i] && cell_format_chars[i] <= 122) {
         switch (cell_format_chars[i]) {
           case 'Y': {
-            char tmp[5];
-            sprintf(tmp, "%d", year);
+            char tmp[8];
+            sprintf(tmp, "%04d", year);
             result_date_str += tmp;
             break;
           }
           case 'y': {
             char tmp[5];
-            sprintf(tmp, "%d", year % 100);
+            sprintf(tmp, "%02d", year % 100);
             if (0 <= (year % 100) && (year % 100) <= 9) {
               result_date_str += "0";
             }
@@ -1347,8 +1347,8 @@ RC FunctionExpr::calc_value(const Value &child_value, Value &value) const
             break;
           }
           case 'm': {
-            char tmp[3];
-            sprintf(tmp, "%d", month);
+            char tmp[5];
+            sprintf(tmp, "%02d", month);
             if (0 <= month && month <= 9) {
               result_date_str += "0";
             }
@@ -1356,8 +1356,8 @@ RC FunctionExpr::calc_value(const Value &child_value, Value &value) const
             break;
           }
           case 'D': {
-            char tmp[3];
-            sprintf(tmp, "%d", day);
+            char tmp[5];
+            sprintf(tmp, "%02d", day);
             result_date_str += tmp;
             if (11 <= day && day <= 13) {
               result_date_str += "th";
@@ -1384,8 +1384,8 @@ RC FunctionExpr::calc_value(const Value &child_value, Value &value) const
             break;
           }
           case 'd': {
-            char tmp[3];
-            sprintf(tmp, "%d", day);
+            char tmp[5];
+            sprintf(tmp, "%02d", day);
             if (0 <= day && day <= 9) {
               result_date_str += "0";
             }

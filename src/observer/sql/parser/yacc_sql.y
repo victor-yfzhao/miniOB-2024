@@ -955,9 +955,8 @@ condition:
       if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
       if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
       $$->left_expr=$1;
-      $$->right_is_attr = 0;
-      $$->has_sub_select = 2;
-      $$->sub_select = &$4->selection;
+      $$->right_is_sub_select = 1;
+      $$->right_sub_select = &$4->selection;
       $$->comp = $2;
     } 
     
@@ -965,13 +964,21 @@ condition:
     LBRACE select_stmt RBRACE comp_op expression { 
       $$ = new ConditionSqlNode;
       $$->left_is_attr = 0;
-      $$->has_sub_select = 1;
-      $$->sub_select = &$2->selection;
+      $$->left_is_sub_select = 1;
+      $$->left_sub_select = &$2->selection;
       if($5->type()==ExprType::UNBOUND_FIELD){$$->right_is_attr = 1;}
       if($5->type()==ExprType::VALUE){$$->right_is_val = 1;}
       $$->right_expr=$5;
       $$->comp = $4;
     } 
+    | LBRACE select_stmt RBRACE comp_op LBRACE select_stmt RBRACE {
+      $$ = new ConditionSqlNode;
+      $$->left_is_sub_select = 1;
+      $$->left_sub_select = &$2->selection;
+      $$->right_is_sub_select = 1;
+      $$->right_sub_select = &$6->selection;
+      $$->comp = $4;
+    }
     // const value
     | expression comp_op LBRACE value value_list RBRACE {
       $$ = new ConditionSqlNode;
@@ -979,7 +986,7 @@ condition:
       if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
       $$->left_expr=$1;
       $$->right_is_attr = 0;
-      $$->has_sub_select = 2;
+      $$->right_is_sub_select = 1;
       $$->right_is_const = 1;
       // 
       if ($5 != nullptr) {
@@ -998,7 +1005,6 @@ condition:
       if($3->type()==ExprType::VALUE){$$->right_is_val = 1;}
       $$->right_expr=$3;
       $$->comp = $2;
-      $$->has_sub_select = 0;
     }
     /* | rel_attr IS NULL_T
     {
