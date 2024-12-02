@@ -25,6 +25,8 @@ PredicatePhysicalOperator::PredicatePhysicalOperator(std::unique_ptr<Expression>
 
 RC PredicatePhysicalOperator::open(Trx *trx)
 {
+  this->trx_ = trx;
+
   if (children_.size() != 1) {
     LOG_WARN("predicate operator must has one child");
     return RC::INTERNAL;
@@ -37,20 +39,18 @@ RC PredicatePhysicalOperator::open(Trx *trx)
       ComparisonExpr *comp_expr = static_cast<ComparisonExpr *>(child.get());
       if (comp_expr->left()->type() == ExprType::SUB_SELECT) {
         SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->left().get());
+        left_sub_select_expr_ = sub_select_expr;
         RC rc = sub_select_expr->set_sub_select_result();
         if (rc != RC::SUCCESS) {
           return rc;
         }
         auto values = sub_select_expr->sub_select_result();
-        if(comp_expr->comp() != CompOp::IN && comp_expr->comp() != CompOp::NOT_IN){
-          if(values.size() != 1){
-            LOG_WARN("sub select should have only one field");
-            return RC::INVALID_ARGUMENT;
-          }
-        }
+        sub_selection_result_size_ = values.size();
+        has_sub_select_ = 1;
       }
       if (comp_expr->right()->type() == ExprType::SUB_SELECT) {
         SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(comp_expr->right().get());
+        right_sub_select_expr_ = sub_select_expr;
         if(sub_select_expr->sub_select_result().empty()){
           RC rc = sub_select_expr->set_sub_select_result();
           if (rc != RC::SUCCESS) {
@@ -58,12 +58,8 @@ RC PredicatePhysicalOperator::open(Trx *trx)
           }
         }
         auto values = sub_select_expr->sub_select_result();
-          if(comp_expr->comp() != CompOp::IN && comp_expr->comp() != CompOp::NOT_IN){
-            if(values.size() > 1){
-              LOG_WARN("sub select should have only one field");
-              return RC::INVALID_ARGUMENT;
-            }
-          }
+        sub_select_expr->set_sub_select_result();
+        has_sub_select_ = (has_sub_select_ == 1) ? 3 : 2;
       }
     }
   }
@@ -93,6 +89,35 @@ RC PredicatePhysicalOperator::next()
     if (value.get_boolean()) {
       return rc;
     }
+  }
+
+  sub_selection_result_index_++;
+  switch(has_sub_select_){
+    case 1:{
+      if (sub_selection_result_index_ < sub_selection_result_size_) {
+        left_sub_select_expr_->set_index(sub_selection_result_index_);
+        return RC::SUCCESS;
+      }
+    }break;
+    case 2:{
+      if (sub_selection_result_index_ < sub_selection_result_size_) {
+        right_sub_select_expr_->set_index(sub_selection_result_index_);
+        return RC::SUCCESS;
+      }
+    }break;
+    case 3:{
+      if (sub_selection_result_index_ < sub_selection_result_size_) {
+        left_sub_select_expr_->set_index(sub_selection_result_index_);
+        right_sub_select_expr_->set_index(sub_selection_result_index_);
+        return RC::SUCCESS;
+      }
+    }break;
+    default:break;
+  }
+  if (sub_selection_result_index_ < sub_selection_result_size_) {
+    children_[0]->close();
+    rc = children_[0]->open(trx_);
+    return RC::SUCCESS;
   }
   return rc;
 }

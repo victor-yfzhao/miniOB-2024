@@ -163,8 +163,29 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
       field = table->table_meta().field(left_attr->attribute_name.c_str());
 
     }
+
     FilterObj filter_obj;
-    filter_obj.init_attr(Field(table, field));
+    if (table->name() == default_table->name()) {
+      filter_obj.init_attr(Field(table, field));
+    }
+    else {
+      SelectSqlNode *new_sub_select = new SelectSqlNode();
+      new_sub_select->expressions.push_back(std::move(left_expression));
+      new_sub_select->relations.push_back(table->name());
+      Stmt *sub_select_stmt;
+      RC rc_tmp = SelectStmt::create(db, *new_sub_select, sub_select_stmt, 1);
+      if (rc_tmp != RC::SUCCESS) {
+        return rc_tmp;
+      }
+      // std::unique_ptr<LogicalOperator> project_oper;
+      // std::unique_ptr<PhysicalOperator> project_phy_oper;
+      std::unique_ptr<Expression> left_sub_expr(new SubSelectExpr());
+      SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(left_sub_expr.get());
+      std::shared_ptr<SelectStmt> sub_select_stmt_shared(static_cast<SelectStmt *>(sub_select_stmt));
+      sub_select_expr->set_stmt(sub_select_stmt_shared);
+
+      filter_obj.init_expr(left_sub_expr);
+    }
     filter_unit->set_left(filter_obj);
   } 
   else if(1 == condition.left_is_val){
@@ -218,8 +239,29 @@ RC FilterStmt::create_filter_unit(Db *db, Table *default_table, std::unordered_m
       table = db->find_table(right_attr->relation_name.c_str());
       field = table->table_meta().field(right_attr->attribute_name.c_str());
     }
+
     FilterObj filter_obj;
-    filter_obj.init_attr(Field(table, field));
+    if (table->name() == default_table->name()) {
+      filter_obj.init_attr(Field(table, field));
+    }
+    else {
+      SelectSqlNode *new_sub_select = new SelectSqlNode();
+      new_sub_select->expressions.push_back(std::move(right_expression));
+      new_sub_select->relations.push_back(table->name());
+      Stmt *sub_select_stmt;
+      RC rc_tmp = SelectStmt::create(db, *new_sub_select, sub_select_stmt, 1);
+      if (rc_tmp != RC::SUCCESS) {
+        return rc_tmp;
+      }
+      // std::unique_ptr<LogicalOperator> project_oper;
+      // std::unique_ptr<PhysicalOperator> project_phy_oper;
+      std::unique_ptr<Expression> right_sub_expr(new SubSelectExpr());
+      SubSelectExpr *sub_select_expr = static_cast<SubSelectExpr *>(right_sub_expr.get());
+      std::shared_ptr<SelectStmt> sub_select_stmt_shared(static_cast<SelectStmt *>(sub_select_stmt));
+      sub_select_expr->set_stmt(sub_select_stmt_shared);
+
+      filter_obj.init_expr(right_sub_expr);
+    }
     filter_unit->set_right(filter_obj);
   } 
   else if(1 == condition.right_is_val){

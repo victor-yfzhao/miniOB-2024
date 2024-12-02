@@ -213,6 +213,7 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const
 
   if (left_->type() == ExprType::SUB_SELECT) {
     auto left_values = ((SubSelectExpr*)left_.get())->sub_select_result();
+    int index = ((SubSelectExpr*)left_.get())->index();
     RC rc = right_->get_value(tuple, right_value);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to get value of right expression. rc=%s", strrc(rc));
@@ -259,9 +260,9 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const
           value.set_boolean(false);
           return rc;
         }
-        if (left_values.size() == 1){
+        if (index < left_values.size()){
           bool bool_value = false;
-          rc = compare_value(left_values[0], right_value, bool_value);
+          rc = compare_value(left_values[index], right_value, bool_value);
           if (rc == RC::SUCCESS) {
             value.set_boolean(bool_value);
             return rc;
@@ -278,6 +279,7 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const
 
   if (right_->type() == ExprType::SUB_SELECT) {
     auto right_values = ((SubSelectExpr*)right_.get())->sub_select_result();
+    int index = ((SubSelectExpr*)right_.get())->index();
     RC rc = left_->get_value(tuple, left_value);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to get value of left expression. rc=%s", strrc(rc));
@@ -324,9 +326,9 @@ RC ComparisonExpr::get_value(const Tuple &tuple, Value &value) const
           value.set_boolean(false);
           return rc;
         }
-        if (right_values.size() == 1){
+        if (index < right_values.size()){
           bool bool_value = false;
-          rc = compare_value(left_value, right_values[0], bool_value);
+          rc = compare_value(left_value, right_values[index], bool_value);
           if (rc == RC::SUCCESS) {
             value.set_boolean(bool_value);
             return rc;

@@ -42,4 +42,10 @@ public:
 
 private:
   std::unique_ptr<Expression> expression_;
+  int sub_selection_result_index_ = 0; 
+  int sub_selection_result_size_ = 0;
+  int has_sub_select_ = 0;
+  Trx *trx_ = nullptr;
+  SubSelectExpr *left_sub_select_expr_ = nullptr;
+  SubSelectExpr *right_sub_select_expr_ = nullptr;
 };

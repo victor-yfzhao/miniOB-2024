@@ -564,12 +564,16 @@ public:
   RC set_sub_select_result();
   RC set_sub_select_result(const std::vector<Value> &result);
 
+  int index() const { return index_; }
+  void set_index(int index) { index_ = index; }
+
 private:
   SelectSqlNode                    *sub_select_node_;
   std::shared_ptr<SelectStmt>       sub_select_;
   std::shared_ptr<LogicalOperator>  project_oper_;
   std::shared_ptr<PhysicalOperator> project_phy_oper_;
   std::vector<Value>                sub_select_result_;
+  int                               index_ = 0;
 };
 
 
