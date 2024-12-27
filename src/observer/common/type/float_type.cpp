@@ -16,7 +16,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/limits.h"
 #include "common/value.h"
 #include "float_type.h"
-
+#include <cmath>
 int FloatType::compare(const Value &left, const Value &right) const
 {
   if (left.attr_type() == AttrType::NULLS || right.attr_type() == AttrType::NULLS) {
@@ -73,17 +73,27 @@ RC FloatType::negative(const Value &val, Value &result) const
 
 RC FloatType::set_value_from_str(Value &val, const string &data) const
 {
+  LOG_INFO("OTHER TYPES TO FLOATS %s ",data);
   RC                rc = RC::SUCCESS;
-  stringstream deserialize_stream;
-  deserialize_stream.clear();
-  deserialize_stream.str(data);
-
-  float float_value;
-  deserialize_stream >> float_value;
-  if (!deserialize_stream || !deserialize_stream.eof()) {
-    rc = RC::SCHEMA_FIELD_TYPE_MISMATCH;
-  } else {
-    val.set_float(float_value);
+  // stringstream deserialize_stream;
+  // deserialize_stream.clear();
+  // deserialize_stream.str(data);
+  
+  // float float_value;
+  // deserialize_stream >> float_value;
+  // if (!deserialize_stream || !deserialize_stream.eof()) {
+  //   rc = RC::SCHEMA_FIELD_TYPE_MISMATCH;
+  // } else {
+  //   val.set_float(float_value);
+  // }
+  try {
+    float float_value = std::stof(data);  // 使用 std::stof 进行字符串到 float 的转换
+    val.set_float(float_value);           // 成功转换后，设置到 Value 对象
+    return RC::SUCCESS;
+  } catch (const std::invalid_argument& e) {
+    return RC::SCHEMA_FIELD_TYPE_MISMATCH;  // 返回类型不匹配的错误
+  } catch (const std::out_of_range& e) {
+    return RC::INVALID_ARGUMENT;  // 返回数值超出范围的错误
   }
   return rc;
 }
@@ -109,11 +119,12 @@ int FloatType::cast_cost(AttrType type)
 
 RC FloatType::cast_to(const Value&val, AttrType type , Value &result) const
 {
-  //LOG_WARN("float::Casting..")
+  //LOG_INFO("float::Casting..");
   switch (type)
   {
   case AttrType::INTS:{
-    result.set_int(val.get_float());
+    // float val_float = std::round(val.get_float());
+    result.set_int(round(val.get_float()));
     break;
   }
   case AttrType::CHARS:{

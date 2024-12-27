@@ -17,6 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include <vector>
 
 #include "sql/expr/expression.h"
+#include "common/lang/unordered_map.h"
 
 class BinderContext
 {
@@ -27,7 +28,6 @@ public:
   void add_table(Table *table) { query_tables_.push_back(table); }
 
   Table *find_table(const char *table_name) const;
-
   const std::vector<Table *> &query_tables() const { return query_tables_; }
 
 private:
@@ -41,7 +41,7 @@ private:
 class ExpressionBinder
 {
 public:
-  ExpressionBinder(BinderContext &context) : context_(context) {}
+  ExpressionBinder(BinderContext &context , unordered_map<string, string> &alias_table_map) : context_(context), alias_table_map_(alias_table_map) {}
   virtual ~ExpressionBinder() = default;
 
   RC bind_expression(std::unique_ptr<Expression> &expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
@@ -67,7 +67,10 @@ private:
       std::unique_ptr<Expression> &vector_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
   RC bind_aggregate_expression(
       std::unique_ptr<Expression> &aggregate_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
+  RC bind_function_expression(
+      std::unique_ptr<Expression> &function_expr, std::vector<std::unique_ptr<Expression>> &bound_expressions);
 
 private:
   BinderContext &context_;
+  unordered_map<string, string>  alias_table_map_;      ///< 表别名到表名的映射
 };

@@ -96,7 +96,14 @@ RC CharType::cast_to(const Value &val, AttrType type, Value &result) const
     case AttrType::VECTORS: {
       return DataType::type_instance(AttrType::VECTORS)->set_value_from_str(result, val.get_string());
       }
-      break;  
+      break; 
+    case AttrType::INTS: {
+      return DataType::type_instance(AttrType::INTS)->set_value_from_str(result,val.get_string());
+    } 
+    case AttrType::FLOATS: {
+      return DataType::type_instance(AttrType::FLOATS)->set_value_from_str(result,val.get_string());
+    }
+      break;
     default: return RC::UNIMPLEMENTED;
   }
   return RC::SUCCESS;
@@ -112,6 +119,12 @@ int CharType::cast_cost(AttrType type)
   }
   if (type == AttrType::VECTORS) {
     return 0;
+  }
+  if( type == AttrType::INTS) {
+    return 2;
+  }
+  if( type == AttrType::FLOATS) {
+    return 2;
   }
   return INT32_MAX;
 }

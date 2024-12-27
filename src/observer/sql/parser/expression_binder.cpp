@@ -100,6 +100,10 @@ RC ExpressionBinder::bind_expression(unique_ptr<Expression> &expr, vector<unique
       return RC::SUCCESS;
     } break;
 
+    case ExprType::FunctionExpr: {
+      return bind_function_expression(expr, bound_expressions);
+    } break;
+
     default: {
       LOG_WARN("unknown expression type: %d", static_cast<int>(expr->type()));
       return RC::INTERNAL;
@@ -114,7 +118,10 @@ RC ExpressionBinder::bind_star_expression(
   if (nullptr == expr) {
     return RC::SUCCESS;
   }
-
+  if (0 != strlen(expr->alias())) {
+    LOG_WARN("star expression cannot have alias");
+    return RC::INVALID_ARGUMENT;
+  }
   auto star_expr = static_cast<StarExpr *>(expr.get());
 
   vector<Table *> tables_to_wildcard;
@@ -123,8 +130,12 @@ RC ExpressionBinder::bind_star_expression(
   if (!is_blank(table_name) && 0 != strcmp(table_name, "*")) {
     Table *table = context_.find_table(table_name);
     if (nullptr == table) {
+      table_name = alias_table_map_[table_name].c_str();
+      table = context_.find_table(table_name);
+      if (nullptr == table) {
       LOG_INFO("no such table in from list: %s", table_name);
       return RC::SCHEMA_TABLE_NOT_EXIST;
+    }
     }
 
     tables_to_wildcard.push_back(table);
@@ -143,6 +154,7 @@ RC ExpressionBinder::bind_star_expression(
 RC ExpressionBinder::bind_unbound_field_expression(
     unique_ptr<Expression> &expr, vector<unique_ptr<Expression>> &bound_expressions)
 {
+  //LOG_INFO("bind_unbound_field_expression");
   if (nullptr == expr) {
     return RC::SUCCESS;
   }
@@ -163,8 +175,12 @@ RC ExpressionBinder::bind_unbound_field_expression(
   } else {
     table = context_.find_table(table_name);
     if (nullptr == table) {
+      table_name = alias_table_map_[table_name].c_str();
+      table = context_.find_table(table_name);
+      if (nullptr == table) {
       LOG_INFO("no such table in from list: %s", table_name);
       return RC::SCHEMA_TABLE_NOT_EXIST;
+      }
     }
   }
 
@@ -180,6 +196,11 @@ RC ExpressionBinder::bind_unbound_field_expression(
     Field      field(table, field_meta);
     FieldExpr *field_expr = new FieldExpr(field);
     field_expr->set_name(field_name);
+    if (is_blank(unbound_field_expr->alias())) {
+      field_expr->set_alias(field_name);
+    } else {
+      field_expr->set_alias(unbound_field_expr->alias());
+    }
     bound_expressions.emplace_back(field_expr);
   }
 
@@ -410,6 +431,37 @@ RC ExpressionBinder::bind_vector_expression(
   unique_ptr<Expression> &right = child_bound_expressions[0];
   if (right.get() != right_expr.get()) {
     right_expr.reset(right.release());
+  }
+
+  bound_expressions.emplace_back(std::move(expr));
+  return RC::SUCCESS;
+}
+
+RC ExpressionBinder::bind_function_expression(
+    unique_ptr<Expression> &expr, vector<unique_ptr<Expression>> &bound_expressions)
+{
+  if (nullptr == expr) {
+    return RC::SUCCESS;
+  }
+
+  auto function_expr = static_cast<FunctionExpr *>(expr.get());
+
+  vector<unique_ptr<Expression>> child_bound_expressions;
+  unique_ptr<Expression>        &child_expr = function_expr->child();
+
+  RC rc = bind_expression(child_expr, child_bound_expressions);
+  if (OB_FAIL(rc)) {
+    return rc;
+  }
+
+  if (child_bound_expressions.size() != 1) {
+    LOG_WARN("invalid right children number of vector expression: %d", child_bound_expressions.size());
+    return RC::INVALID_ARGUMENT;
+  }
+
+  unique_ptr<Expression> &child = child_bound_expressions[0];
+  if (child.get() != child_expr.get()) {
+    child_expr.reset(child.release());
   }
 
   bound_expressions.emplace_back(std::move(expr));

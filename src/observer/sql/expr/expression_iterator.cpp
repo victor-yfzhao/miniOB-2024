@@ -70,7 +70,10 @@ RC ExpressionIterator::iterate_child_expr(Expression &expr, function<RC(unique_p
       auto &aggregate_expr = static_cast<AggregateExpr &>(expr);
       rc = callback(aggregate_expr.child());
     } break;
-
+    case ExprType::FunctionExpr:{
+      auto &function_expr = static_cast<FunctionExpr &>(expr);
+      rc = callback(function_expr.child());
+    } break;
     case ExprType::NONE:
     case ExprType::STAR:
     case ExprType::UNBOUND_FIELD:

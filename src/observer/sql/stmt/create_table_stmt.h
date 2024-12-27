@@ -31,7 +31,11 @@ class CreateTableStmt : public Stmt
 public:
   CreateTableStmt(
       const std::string &table_name, const std::vector<AttrInfoSqlNode> &attr_infos, StorageFormat storage_format)
-      : table_name_(table_name), attr_infos_(attr_infos), storage_format_(storage_format)
+      : table_name_(table_name), attr_infos_(attr_infos), storage_format_(storage_format), sub_select_(nullptr)
+  {}
+  CreateTableStmt(
+      const std::string &table_name, StorageFormat storage_format, SelectStmt *sub_select)
+      : table_name_(table_name), storage_format_(storage_format), sub_select_(sub_select)
   {}
   virtual ~CreateTableStmt() = default;
 
@@ -48,4 +52,5 @@ private:
   std::string                  table_name_;
   std::vector<AttrInfoSqlNode> attr_infos_;
   StorageFormat                storage_format_;
+  SelectStmt                  *sub_select_;
 };

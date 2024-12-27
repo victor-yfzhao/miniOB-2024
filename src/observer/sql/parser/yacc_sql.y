@@ -62,6 +62,29 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
   return expr;
 }
 
+FunctionExpr * create_function_expression(FunctionExpr::Type type,
+                                          Expression *args,
+                                          int round_accuracy,
+                                          std::string date_format,
+                                          const char *sql_string,
+                                          YYLTYPE *llocp)
+{
+  if(type == FunctionExpr::Type::ROUND) {
+    FunctionExpr *expr = new FunctionExpr(type, args , round_accuracy);
+    expr->set_name(token_name(sql_string, llocp));
+    return expr;
+  }
+  else if (type == FunctionExpr::Type::DATE_FORMAT) {
+    FunctionExpr *expr = new FunctionExpr(type, args , date_format);
+    expr->set_name(token_name(sql_string, llocp));
+    return expr;
+  }else{
+  FunctionExpr *expr = new FunctionExpr(type, args);
+  expr->set_name(token_name(sql_string, llocp));
+  return expr;
+  }
+}
+
 %}
 
 %define api.pure full
@@ -77,6 +100,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 //标识tokens
 %token  SEMICOLON
         BY
+        AS
         CREATE
         DROP
         GROUP
@@ -115,6 +139,9 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         L2_DISTANCE
         COSINE_DISTANCE
         INNER_PRODUCT
+        LENGTH
+        ROUND
+        DATE_FORMAT
         DATE_T // ADD DATE
         HELP
         EXIT
@@ -180,9 +207,10 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
 //非终结符
 
 /** type 定义了各种解析后的结果输出的是什么类型。类型对应了 union 中的定义的成员变量名称 **/
+%type <string>              alias
 %type <number>              type
 %type <condition>           condition
-%type <condition>           having
+%type <condition_list>      having
 %type <value>               value
 %type <number>              number
 %type <string>              relation
@@ -380,6 +408,15 @@ create_table_stmt:    /*create table 语句的语法解析树*/
         create_table.storage_format = $8;
         free($8);
       }
+    }
+    | CREATE TABLE ID AS select_stmt
+    {
+      $$ = new ParsedSqlNode(SCF_CREATE_TABLE);
+      CreateTableSqlNode &create_table = $$->create_table;
+      create_table.relation_name = $3;
+      free($3);
+
+      create_table.sub_select = &$5->selection;
     }
     ;
 attr_def_list:
@@ -648,6 +685,13 @@ kv_pair:
     ;
   
 select_stmt:        /*  select 语句的语法解析树*/
+    SELECT expression_list 
+    {
+      $$ = new ParsedSqlNode(SCF_CALC);
+      $$->calc.expressions.swap(*$2);
+      delete $2;
+    }
+    |
     SELECT expression_list FROM rel_list inner_join_list where group_by having 
     {
       $$ = new ParsedSqlNode(SCF_SELECT);
@@ -677,7 +721,8 @@ select_stmt:        /*  select 语句的语法解析树*/
       }
 
       if($8 != nullptr) {
-        $$->selection.having = $8;
+        $$->selection.having_conditions.swap(*$8);
+        delete $8;
       }
 
       $$->selection.sub_select = nullptr;
@@ -692,18 +737,35 @@ calc_stmt:
     }
     ;
 
+alias:
+    /* empty */ {
+      $$ = nullptr;
+    }
+    | ID {
+      $$ = $1;
+    }
+    | AS ID {
+      $$ = $2;
+    }
+
 expression_list:
-    expression
+    expression alias
     {
       $$ = new std::vector<std::unique_ptr<Expression>>;
+      if (nullptr != $2) {
+        $1->set_alias($2);
+      }
       $$->emplace_back($1);
     }
-    | expression COMMA expression_list
+    | expression alias COMMA expression_list
     {
-      if ($3 != nullptr) {
-        $$ = $3;
+      if ($4 != nullptr) {
+        $$ = $4;
       } else {
         $$ = new std::vector<std::unique_ptr<Expression>>;
+      }
+      if (nullptr != $2) {
+        $1->set_alias($2);
       }
       $$->emplace($$->begin(), $1);
     }
@@ -721,10 +783,6 @@ expression:
     | expression '/' expression {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::DIV, $1, $3, sql_string, &@$);
     }
-    /* | LBRACE expression RBRACE {
-      $$ = $2;
-      $$->set_name(token_name(sql_string, &@$));
-    } */
     | '-' expression %prec UMINUS {
       $$ = create_arithmetic_expression(ArithmeticExpr::Type::NEGATIVE, $2, nullptr, sql_string, &@$);
     }
@@ -742,6 +800,10 @@ expression:
     | '*' {
       $$ = new StarExpr();
     }
+    | ID DOT '*'  {
+      $$ = new StarExpr($1);
+      free($1);
+    }
     | L2_DISTANCE LBRACE expression COMMA expression RBRACE {
       $$ = create_vector_expression(VectorExpr::Type::L2_DISTANCE, $3, $5, sql_string, &@$);
     }
@@ -750,6 +812,18 @@ expression:
     }
     | INNER_PRODUCT LBRACE expression COMMA expression RBRACE {
       $$ = create_vector_expression(VectorExpr::Type::INNER_PRODUCT, $3, $5, sql_string, &@$);
+    }
+    | LENGTH LBRACE expression RBRACE {
+      $$ = create_function_expression(FunctionExpr::Type::LENGTH, $3, -1 , "" , sql_string, &@$);
+    }
+    | ROUND LBRACE expression COMMA NUMBER RBRACE {
+      $$ = create_function_expression(FunctionExpr::Type::ROUND, $3, $5 , "" , sql_string, &@$);
+    }
+    | ROUND LBRACE expression RBRACE {
+      $$ = create_function_expression(FunctionExpr::Type::ROUND, $3, 0 ,"", sql_string, &@$);
+    }
+    | DATE_FORMAT LBRACE expression COMMA SSS RBRACE {
+      $$ = create_function_expression(FunctionExpr::Type::DATE_FORMAT, $3, -1 , $5, sql_string, &@$);
     }
     // your code here
     | COUNT LBRACE expression RBRACE{
@@ -820,20 +894,33 @@ relation:
     }
     ;
 rel_list:
-    relation {
+    relation alias{
       $$ = new std::vector<std::string>();
+      if ($2 != nullptr) {
+        $$->push_back(std::string($1) + '.' + std::string($2));
+        free($1);
+        free($2);
+      } else {
       $$->push_back($1);
       free($1);
+      }
     }
-    | relation COMMA rel_list {
-      if ($3 != nullptr) {
-        $$ = $3;
+    | relation alias COMMA rel_list {
+      if ($4 != nullptr) {
+        $$ = $4;
       } else {
         $$ = new std::vector<std::string>;
       }
-
-      $$->insert($$->begin(), $1);
-      free($1);
+      if ($2 != nullptr) {
+        $$->insert($$->begin(), std::string($1) + '.' + std::string($2));
+        free($1);
+        free($2);
+      } else {
+        $$->insert($$->begin(), $1);
+        free($1);
+      }
+      // $$->insert($$->begin(), $1);
+      // free($1);
     }
     ;
 
@@ -868,9 +955,8 @@ condition:
       if($1->type()==ExprType::UNBOUND_FIELD){$$->left_is_attr = 1;}
       if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
       $$->left_expr=$1;
-      $$->right_is_attr = 0;
-      $$->has_sub_select = 2;
-      $$->sub_select = &$4->selection;
+      $$->right_is_sub_select = 1;
+      $$->right_sub_select = &$4->selection;
       $$->comp = $2;
     } 
     
@@ -878,13 +964,21 @@ condition:
     LBRACE select_stmt RBRACE comp_op expression { 
       $$ = new ConditionSqlNode;
       $$->left_is_attr = 0;
-      $$->has_sub_select = 1;
-      $$->sub_select = &$2->selection;
+      $$->left_is_sub_select = 1;
+      $$->left_sub_select = &$2->selection;
       if($5->type()==ExprType::UNBOUND_FIELD){$$->right_is_attr = 1;}
       if($5->type()==ExprType::VALUE){$$->right_is_val = 1;}
       $$->right_expr=$5;
       $$->comp = $4;
     } 
+    | LBRACE select_stmt RBRACE comp_op LBRACE select_stmt RBRACE {
+      $$ = new ConditionSqlNode;
+      $$->left_is_sub_select = 1;
+      $$->left_sub_select = &$2->selection;
+      $$->right_is_sub_select = 1;
+      $$->right_sub_select = &$6->selection;
+      $$->comp = $4;
+    }
     // const value
     | expression comp_op LBRACE value value_list RBRACE {
       $$ = new ConditionSqlNode;
@@ -892,7 +986,7 @@ condition:
       if($1->type()==ExprType::VALUE){$$->left_is_val = 1;}
       $$->left_expr=$1;
       $$->right_is_attr = 0;
-      $$->has_sub_select = 2;
+      $$->right_is_sub_select = 1;
       $$->right_is_const = 1;
       // 
       if ($5 != nullptr) {
@@ -911,7 +1005,6 @@ condition:
       if($3->type()==ExprType::VALUE){$$->right_is_val = 1;}
       $$->right_expr=$3;
       $$->comp = $2;
-      $$->has_sub_select = 0;
     }
     /* | rel_attr IS NULL_T
     {
@@ -982,7 +1075,7 @@ having:
     {
       $$ = nullptr; 
     }
-    | HAVING condition
+    | HAVING condition_list
     {
       $$ = $2; // 返回 expression_list
     }
@@ -1001,14 +1094,12 @@ inner_join_list:
     }
     ;
 inner_join:
-    INNER JOIN relation ON condition
+    INNER JOIN relation ON condition_list
     {
       // 创建并填充 innerjoinSqlNode
       $$ = new innerjoinSqlNode;
       $$->relation  =  $3;
-      $$->condition = *$5;
-      $$->condition.left_is_attr = 1;
-      $$->condition.right_is_attr = 1;
+      $$->conditions.swap(*$5);
     }
     ;
 group_by:
